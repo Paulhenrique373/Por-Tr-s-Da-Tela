@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Por Trás da Tela</title>
+    <title>Por Trás da Tela — Cyber-Espaço Interativo</title>
     <link rel="stylesheet" href="style.css">
-    <meta name="description" content="Jogo interativo sobre cyberbullying, empatia e segurança digital">
+    <meta name="description" content="Jogo narrativo interativo sobre cyberbullying, escolhas, empatia e cidadania digital">
 </head>
 <body>
 
@@ -21,7 +21,7 @@
             <div class="loading-bar-container">
                 <div class="loading-bar" id="loading-bar"></div>
             </div>
-            <p class="loading-text" id="loading-text">Carregando...</p>
+            <p class="loading-text" id="loading-text">Inicializando módulos de empatia...</p>
         </div>
         <div class="loading-particles" id="loading-particles"></div>
     </div>
@@ -80,7 +80,7 @@
                 <div class="setting-item">
                     <div class="setting-info">
                         <span class="setting-icon">🔊</span>
-                        <span class="setting-label">Música</span>
+                        <span class="setting-label">Música Sintetizada</span>
                     </div>
                     <label class="toggle-switch" aria-label="Ativar ou desativar música">
                         <input type="checkbox" id="toggle-music" checked>
@@ -90,7 +90,7 @@
                 <div class="setting-item">
                     <div class="setting-info">
                         <span class="setting-icon">🔔</span>
-                        <span class="setting-label">Efeitos Sonoros</span>
+                        <span class="setting-label">Efeitos Sonoros (Sfx)</span>
                     </div>
                     <label class="toggle-switch" aria-label="Ativar ou desativar efeitos sonoros">
                         <input type="checkbox" id="toggle-sfx" checked>
@@ -100,7 +100,7 @@
                 <div class="setting-item">
                     <div class="setting-info">
                         <span class="setting-icon">✨</span>
-                        <span class="setting-label">Animações</span>
+                        <span class="setting-label">Animações de Interface</span>
                     </div>
                     <label class="toggle-switch" aria-label="Ativar ou desativar animações">
                         <input type="checkbox" id="toggle-animations" checked>
@@ -139,23 +139,19 @@
             <div class="panel-body about-body">
                 <div class="about-section">
                     <h3>🎮 O que é "Por Trás da Tela"?</h3>
-                    <p>É um jogo narrativo interativo sobre cyberbullying, empatia e segurança digital. Você acompanha personagens adolescentes e toma decisões que afetam suas vidas e relacionamentos.</p>
+                    <p>É uma experiência narrativa focada em escolhas e consequências reais sobre o impacto digital de nossas ações. Você controla o ritmo da história e decide como apoiar ou intervir diante do bullying digital.</p>
                 </div>
                 <div class="about-section">
-                    <h3>🎯 Objetivo</h3>
-                    <p>Perceber que suas escolhas na internet têm consequências reais. Aprender a identificar cyberbullying, apoiar vítimas e buscar ajuda de forma segura.</p>
+                    <h3>🎯 Práticas Educativas</h3>
+                    <p>Focado em desenvolver empatia, discernimento de privacidade e noções gerais sobre a legislação digital brasileira e cyberbullying.</p>
                 </div>
                 <div class="about-section">
-                    <h3>⚠️ Aviso Importante</h3>
-                    <p>Todas as situações, personagens e cenários são <strong>fictícios</strong>. Nenhum nome, foto ou informação real de pessoas foi utilizado.</p>
+                    <h3>⚠️ Sem Fins Lucrativos</h3>
+                    <p>Desenvolvido de forma aberta e ética. Nomes e situações são completamente fictícios e criados apenas para simulação pedagógica.</p>
                 </div>
                 <div class="about-section">
-                    <h3>🔒 Privacidade</h3>
-                    <p>Este jogo não coleta nenhuma informação pessoal. Seu progresso é salvo apenas no seu navegador e não é enviado a nenhum servidor.</p>
-                </div>
-                <div class="about-section">
-                    <h3>📞 Precisa de ajuda?</h3>
-                    <p>Converse com um adulto de confiança, um professor, ou ligue para o <strong>Disque 100</strong> (Direitos Humanos) ou <strong>CVV 188</strong> (Centro de Valorização da Vida).</p>
+                    <h3>📞 Canais de Apoio em Situações Reais</h3>
+                    <p>Se você ou alguém que você conhece sofre com cyberbullying, procure a coordenação da sua escola, pais ou ligue para o <strong>Disque 100</strong> ou converse com o <strong>CVV no 188</strong>.</p>
                 </div>
             </div>
         </div>
@@ -166,7 +162,7 @@
         <div class="panel-container panel-wide">
             <div class="panel-header">
                 <button class="back-btn" id="btn-achievements-back" aria-label="Voltar">←</button>
-                <h2>🏆 CONQUISTAS</h2>
+                <h2>🏆 CONQUISTAS DESBLOQUEADAS</h2>
             </div>
             <div class="panel-body">
                 <div class="achievements-grid" id="achievements-grid"></div>
@@ -210,7 +206,7 @@
                 <div class="dialogue-box" id="dialogue-box">
                     <div class="speaker-name" id="speaker-name"></div>
                     <div class="dialogue-text" id="dialogue-text"></div>
-                    <div class="dialogue-continue" id="dialogue-continue" style="display:none;">▼ Clique para continuar</div>
+                    <div class="dialogue-continue" id="dialogue-continue" style="display:none;">▼ Clique para avançar</div>
                 </div>
                 <div class="choices-container" id="choices-container" role="group" aria-label="Escolhas disponíveis"></div>
             </div>
@@ -220,19 +216,20 @@
                 <div class="phone-frame">
                     <div class="phone-notch"></div>
                     <div class="phone-status-bar">
-                        <span class="phone-time" id="phone-time">14:32</span>
+                        <span class="phone-time" id="phone-time">12:00</span>
                         <div class="phone-icons">
                             <span>📶</span><span>🔋</span>
                         </div>
                     </div>
                     <div class="phone-screen" id="phone-screen"></div>
-                    <div class="phone-nav-bar" id="phone-nav-bar" style="display:none;">
-                        <button class="phone-nav-btn active" data-tab="messages" aria-label="Mensagens">💬</button>
-                        <button class="phone-nav-btn" data-tab="conecta" aria-label="Conecta">🌐</button>
-                        <button class="phone-nav-btn" data-tab="notifications" aria-label="Notificações">
+                    <!-- Nova navegação por abas 100% interativa -->
+                    <div class="phone-nav-bar" id="phone-nav-bar">
+                        <button class="phone-nav-btn" id="phone-nav-messages" data-tab="messages" aria-label="Mensagens">💬</button>
+                        <button class="phone-nav-btn" id="phone-nav-conecta" data-tab="conecta" aria-label="Conecta">🌐</button>
+                        <button class="phone-nav-btn" id="phone-nav-notifications" data-tab="notifications" aria-label="Notificações">
                             🔔<span class="notif-badge" id="notif-badge" style="display:none;"></span>
                         </button>
-                        <button class="phone-nav-btn" data-tab="evidence" aria-label="Evidências">🔎</button>
+                        <button class="phone-nav-btn" id="phone-nav-evidence" data-tab="evidence" aria-label="Evidências">🔎</button>
                     </div>
                     <div class="phone-home-bar"></div>
                 </div>
@@ -241,12 +238,12 @@
             <!-- Tela de Investigação -->
             <div class="investigation-container" id="investigation-container" style="display:none;">
                 <div class="investigation-header">
-                    <h3>🔎 INVESTIGAÇÃO</h3>
-                    <p class="investigation-desc" id="investigation-desc"></p>
+                    <h3>🔎 QUADRO DE INVESTIGAÇÃO</h3>
+                    <p class="investigation-desc" id="investigation-desc">Reúna pistas clicando nos itens antes de tirar suas conclusões.</p>
                 </div>
                 <div class="evidence-board" id="evidence-board"></div>
                 <div class="evidence-inventory" id="evidence-inventory">
-                    <h4>📋 Evidências Coletadas</h4>
+                    <h4>📋 Evidências Registradas</h4>
                     <div class="evidence-list" id="evidence-list"></div>
                 </div>
                 <div class="investigation-choices" id="investigation-choices"></div>
@@ -264,7 +261,7 @@
                     <div class="reflection-feedback" id="reflection-feedback" style="display:none;">
                         <div class="reflection-tip-icon">💡</div>
                         <p class="reflection-tip-text" id="reflection-tip-text"></p>
-                        <button class="tip-btn" id="reflection-continue-btn">Continuar</button>
+                        <button class="tip-btn" id="reflection-continue-btn">Prosseguir</button>
                     </div>
                 </div>
             </div>
@@ -275,31 +272,31 @@
             <div class="sidebar-overlay" id="sidebar-overlay"></div>
             <div class="sidebar-content">
                 <div class="sidebar-header">
-                    <h3>MENU</h3>
+                    <h3>MENU DO JOGO</h3>
                     <button class="icon-btn" id="btn-close-sidebar" aria-label="Fechar menu">✕</button>
                 </div>
 
                 <!-- Atributos -->
                 <div class="sidebar-section">
-                    <h4>📊 Atributos</h4>
+                    <h4>📊 Atributos Atuais</h4>
                     <div class="stat-bar-full">
                         <div class="stat-label">🛡️ Segurança</div>
-                        <div class="stat-track"><div class="stat-fill security" id="sf-security" style="width:50%"></div></div>
+                        <div class="stat-track"><div class="stat-fill security" id="sf-security"></div></div>
                         <div class="stat-value" id="sv-security">50</div>
                     </div>
                     <div class="stat-bar-full">
                         <div class="stat-label">💜 Empatia</div>
-                        <div class="stat-track"><div class="stat-fill empathy" id="sf-empathy" style="width:50%"></div></div>
+                        <div class="stat-track"><div class="stat-fill empathy" id="sf-empathy"></div></div>
                         <div class="stat-value" id="sv-empathy">50</div>
                     </div>
                     <div class="stat-bar-full">
                         <div class="stat-label">💪 Coragem</div>
-                        <div class="stat-track"><div class="stat-fill courage" id="sf-courage" style="width:50%"></div></div>
+                        <div class="stat-track"><div class="stat-fill courage" id="sf-courage"></div></div>
                         <div class="stat-value" id="sv-courage">50</div>
                     </div>
                     <div class="stat-bar-full">
                         <div class="stat-label">🤝 Confiança</div>
-                        <div class="stat-track"><div class="stat-fill trust" id="sf-trust" style="width:50%"></div></div>
+                        <div class="stat-track"><div class="stat-fill trust" id="sf-trust"></div></div>
                         <div class="stat-value" id="sv-trust">50</div>
                     </div>
                 </div>
@@ -312,7 +309,7 @@
                             <span class="rel-avatar">😔</span>
                             <div class="rel-info">
                                 <span class="rel-name">Rafael</span>
-                                <div class="rel-track"><div class="rel-fill" id="rel-rafael" style="width:50%"></div></div>
+                                <div class="rel-track"><div class="rel-fill rafael" id="rel-rafael"></div></div>
                             </div>
                             <span class="rel-val" id="relv-rafael">50</span>
                         </div>
@@ -320,7 +317,7 @@
                             <span class="rel-avatar">😊</span>
                             <div class="rel-info">
                                 <span class="rel-name">Bia</span>
-                                <div class="rel-track"><div class="rel-fill bia" id="rel-bia" style="width:60%"></div></div>
+                                <div class="rel-track"><div class="rel-fill bia" id="rel-bia"></div></div>
                             </div>
                             <span class="rel-val" id="relv-bia">60</span>
                         </div>
@@ -328,7 +325,7 @@
                             <span class="rel-avatar">😎</span>
                             <div class="rel-info">
                                 <span class="rel-name">Lucas</span>
-                                <div class="rel-track"><div class="rel-fill lucas" id="rel-lucas" style="width:50%"></div></div>
+                                <div class="rel-track"><div class="rel-fill lucas" id="rel-lucas"></div></div>
                             </div>
                             <span class="rel-val" id="relv-lucas">50</span>
                         </div>
@@ -337,7 +334,7 @@
 
                 <!-- Evidências -->
                 <div class="sidebar-section">
-                    <h4>🔎 Evidências</h4>
+                    <h4>🔎 Inventário de Evidências</h4>
                     <div class="sidebar-evidence" id="sidebar-evidence">
                         <p class="no-items">Nenhuma evidência coletada.</p>
                     </div>
@@ -345,7 +342,7 @@
 
                 <!-- Conquistas -->
                 <div class="sidebar-section">
-                    <h4>🏆 Conquistas</h4>
+                    <h4>🏆 Conquistas Desbloqueadas</h4>
                     <div class="achievements-list" id="sidebar-achievements-list">
                         <p class="no-items">Nenhuma conquista ainda.</p>
                     </div>
@@ -365,63 +362,61 @@
             <div class="hub-header">
                 <div class="hub-chapter-info">
                     <span class="hub-completed" id="hub-completed">Capítulo 1 Concluído</span>
-                    <h2 class="hub-title">Intervalo</h2>
-                    <p class="hub-desc">Antes de continuar, você pode verificar seu celular e revisar o que aconteceu.</p>
+                    <h2 class="hub-title">Zona de Intervalo</h2>
+                    <p class="hub-desc">Reorganize suas ideias antes de continuar. Use este espaço para explorar seus arquivos digitais e os perfis das pessoas ao seu redor.</p>
                 </div>
             </div>
             <div class="hub-actions">
                 <button class="hub-btn" id="hub-phone-btn">
                     <span class="hub-btn-icon">📱</span>
-                    <span class="hub-btn-label">Celular</span>
-                    <span class="hub-btn-desc">Mensagens e redes sociais</span>
+                    <span class="hub-btn-label">Dispositivo Celular</span>
+                    <span class="hub-btn-desc">Analisar mensagens e publicações do Conecta</span>
                     <span class="hub-badge" id="hub-phone-badge" style="display:none;"></span>
                 </button>
                 <button class="hub-btn" id="hub-evidence-btn">
                     <span class="hub-btn-icon">🔎</span>
-                    <span class="hub-btn-label">Evidências</span>
-                    <span class="hub-btn-desc">Revise o que você coletou</span>
+                    <span class="hub-btn-label">Banco de Evidências</span>
+                    <span class="hub-btn-desc">Analisar prints e links salvos</span>
                 </button>
                 <button class="hub-btn" id="hub-relationships-btn">
                     <span class="hub-btn-icon">👥</span>
-                    <span class="hub-btn-label">Pessoas</span>
-                    <span class="hub-btn-desc">Veja seus relacionamentos</span>
+                    <span class="hub-btn-label">Dossiê de Contatos</span>
+                    <span class="hub-btn-desc">Verificar status de empatia e confiança</span>
                 </button>
                 <button class="hub-btn primary-btn hub-continue" id="hub-continue-btn">
                     <span class="hub-btn-icon">▶</span>
-                    <span class="hub-btn-label">Continuar História</span>
+                    <span class="hub-btn-label">Avançar História</span>
                     <span class="hub-btn-desc" id="hub-next-chapter-desc">Próximo capítulo</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- ========== HUB: Painel do celular ========== -->
+    <!-- ========== HUB MODALS ========== -->
     <div id="hub-phone-panel" class="overlay" style="display:none;">
         <div class="hub-panel-card">
             <div class="hub-panel-header">
-                <h3>📱 Celular</h3>
+                <h3>📱 Celular — Mapeamento do Conecta</h3>
                 <button class="icon-btn hub-panel-close" data-close="hub-phone-panel">✕</button>
             </div>
             <div class="hub-panel-body" id="hub-phone-content"></div>
         </div>
     </div>
 
-    <!-- ========== HUB: Painel de evidências ========== -->
     <div id="hub-evidence-panel" class="overlay" style="display:none;">
         <div class="hub-panel-card">
             <div class="hub-panel-header">
-                <h3>🔎 Evidências Coletadas</h3>
+                <h3>🔎 Evidências Adquiridas</h3>
                 <button class="icon-btn hub-panel-close" data-close="hub-evidence-panel">✕</button>
             </div>
             <div class="hub-panel-body" id="hub-evidence-content"></div>
         </div>
     </div>
 
-    <!-- ========== HUB: Painel de relacionamentos ========== -->
     <div id="hub-relationships-panel" class="overlay" style="display:none;">
         <div class="hub-panel-card">
             <div class="hub-panel-header">
-                <h3>👥 Relacionamentos</h3>
+                <h3>👥 Níveis de Afinidade</h3>
                 <button class="icon-btn hub-panel-close" data-close="hub-relationships-panel">✕</button>
             </div>
             <div class="hub-panel-body" id="hub-relationships-content"></div>
@@ -443,9 +438,9 @@
     <div id="tip-overlay" class="overlay" style="display:none;">
         <div class="tip-card">
             <div class="tip-icon">💡</div>
-            <h3 class="tip-title">DICA</h3>
+            <h3 class="tip-title">DICA DE CIDADANIA DIGITAL</h3>
             <p class="tip-text" id="tip-text"></p>
-            <button class="tip-btn" id="btn-close-tip">Entendi</button>
+            <button class="tip-btn" id="btn-close-tip">Compreendi</button>
         </div>
     </div>
 
@@ -458,21 +453,21 @@
         </div>
     </div>
 
-    <!-- ========== TOAST DE STAT ========== -->
+    <!-- ========== TOAST DE STATS ========== -->
     <div id="stat-toast-container" class="stat-toast-container"></div>
 
     <!-- ========== TOAST DE EVIDÊNCIA ========== -->
     <div id="evidence-toast" class="evidence-toast" style="display:none;">
         <div class="evidence-toast-icon">🔎</div>
         <div class="evidence-toast-info">
-            <span class="evidence-toast-label">EVIDÊNCIA ENCONTRADA</span>
+            <span class="evidence-toast-label">EVIDÊNCIA SALVA</span>
             <span class="evidence-toast-name" id="evidence-toast-name"></span>
         </div>
     </div>
 
     <!-- ========== TOAST DE RELACIONAMENTO ========== -->
     <div id="rel-toast" class="rel-toast" style="display:none;">
-        <span class="rel-toast-avatar" id="rel-toast-avatar"></span>
+        <span class="rel-toast-avatar" id="rel-toast-avatar">🧑</span>
         <span class="rel-toast-text" id="rel-toast-text"></span>
     </div>
 
@@ -481,14 +476,14 @@
         <div class="result-container">
             <div class="result-header" id="result-header">
                 <div class="result-emoji" id="result-emoji">🌟</div>
-                <h2 class="result-title" id="result-title">SEU RESULTADO</h2>
+                <h2 class="result-title" id="result-title">SEU COMPORTAMENTO ONLINE</h2>
                 <p class="result-subtitle" id="result-subtitle"></p>
             </div>
 
             <div class="result-profile-card" id="result-profile-card">
                 <div class="profile-badge" id="profile-badge-icon">🛡️</div>
-                <h3 class="profile-title" id="profile-title">Guardião Digital</h3>
-                <p class="profile-desc" id="profile-desc">Seu título baseado nas suas decisões</p>
+                <h3 class="profile-title" id="profile-title">Perfil do Jogador</h3>
+                <p class="profile-desc" id="profile-desc"></p>
             </div>
 
             <div class="result-stats" id="result-stats">
@@ -515,17 +510,17 @@
             </div>
 
             <div class="result-action-stats" id="result-action-stats">
-                <h3>📊 SUAS AÇÕES</h3>
+                <h3>📊 COMPLEMENTO DE AÇÕES</h3>
                 <div class="action-stats-grid" id="action-stats-grid"></div>
             </div>
 
             <div class="result-decisions" id="result-decisions">
-                <h3>📋 Suas Principais Decisões</h3>
+                <h3>📋 Suas Principais Decisões na Partida</h3>
                 <ul id="result-decisions-list"></ul>
             </div>
 
             <div class="result-achievements" id="result-achievements">
-                <h3>🏅 Conquistas</h3>
+                <h3>🏅 Medalhas e Conquistas de Campanha</h3>
                 <div id="result-achievements-list"></div>
             </div>
 
@@ -534,7 +529,7 @@
             <div class="result-actions">
                 <button class="menu-btn primary-btn" id="btn-play-again">
                     <span class="btn-icon">🔄</span>
-                    <span class="btn-text">JOGAR NOVAMENTE</span>
+                    <span class="btn-text">TENTAR NOVAMENTE</span>
                 </button>
                 <button class="menu-btn" id="btn-result-menu">
                     <span class="btn-icon">🏠</span>
@@ -544,14 +539,14 @@
         </div>
     </div>
 
-    <!-- ========== MODAL DE CONFIRMAÇÃO ========== -->
+    <!-- ========== CONFIRMAÇÕES ========== -->
     <div id="confirm-modal" class="overlay" style="display:none;">
         <div class="confirm-card">
-            <h3 id="confirm-title">Tem certeza?</h3>
+            <h3 id="confirm-title">Ação Irreversível</h3>
             <p id="confirm-text"></p>
             <div class="confirm-actions">
-                <button class="confirm-btn cancel" id="confirm-cancel">Cancelar</button>
-                <button class="confirm-btn accept" id="confirm-accept">Confirmar</button>
+                <button class="confirm-btn cancel" id="confirm-cancel">Abortar</button>
+                <button class="confirm-btn accept" id="confirm-accept">Executar</button>
             </div>
         </div>
     </div>
