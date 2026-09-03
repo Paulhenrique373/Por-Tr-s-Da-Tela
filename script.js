@@ -1,9 +1,9 @@
 /* ============================================
-   POR TRÁS DA TELA — SCRIPT CORRIGIDO & COMPLETO
+   POR TRÁS DA TELA — SCRIPT COMPLETO v4
    ============================================ */
 
 // ============================================
-// AUDIO SINTETIZADO (Web Audio API)
+// AUDIO SINTETIZADO (Web Audio API com Controle de Volume)
 // ============================================
 const SynthAudio = {
     ctx: null,
@@ -23,6 +23,10 @@ const SynthAudio = {
         this.initialized = true;
     },
 
+    getVolumeMultiplier() {
+        return (settings.volume / 100);
+    },
+
     playTone(freq, type, duration, volume, isMusic = false) {
         if (isMusic && !settings.music) return;
         if (!isMusic && !settings.sfx) return;
@@ -36,7 +40,9 @@ const SynthAudio = {
 
             osc.type = type;
             osc.frequency.value = freq;
-            gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+            
+            const finalVol = Math.max(0.0001, volume * this.getVolumeMultiplier());
+            gain.gain.setValueAtTime(finalVol, this.ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
 
             osc.start();
@@ -92,6 +98,9 @@ const SynthAudio = {
 // ESTADO GLOBAL DO JOGO
 // ============================================
 const gameState = {
+    playerName: 'Alex',
+    playerAvatar: '🧑',
+    playerPronoun: 'neutro',
     chapter: 1,
     scene: 0,
     security: 50,
@@ -113,8 +122,10 @@ const gameState = {
         evidenceFound: 0,
         contentNotShared: 0
     },
+    gamesPlayed: 0,
     hasPlayed: false,
-    lastEnding: null
+    lastEnding: null,
+    chatRepliesUsed: {}
 };
 
 // ============================================
@@ -123,12 +134,13 @@ const gameState = {
 const settings = {
     music: true,
     sfx: true,
+    volume: 50,
     animations: true,
     textSpeed: 'normal'
 };
 
 // ============================================
-// FUNÇÕES UTILITÁRIAS DE TELA E LÓGICA (CORRIGIDAS)
+// FUNÇÕES UTILITÁRIAS DE TELA E NAVEGAÇÃO
 // ============================================
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -141,6 +153,10 @@ function showScreen(id) {
     const target = document.getElementById(id);
     if (target) {
         target.classList.add('active');
+        if (id === 'menu-screen') {
+            SynthAudio.stopMusic();
+            updateMenuStats();
+        }
     } else {
         console.error(`Tela #${id} não encontrada.`);
     }
@@ -150,23 +166,23 @@ let pendingAction = null;
 let confirmHandlers = { accept: null, cancel: null };
 
 function showConfirm(title, text, onAccept) {
-    DOM['confirm-title'].textContent = title;
-    DOM['confirm-text'].textContent = text;
-    DOM['confirm-modal'].style.display = 'flex';
+    if (DOM['confirm-title']) DOM['confirm-title'].textContent = title;
+    if (DOM['confirm-text']) DOM['confirm-text'].textContent = text;
+    if (DOM['confirm-modal']) DOM['confirm-modal'].style.display = 'flex';
 
     if (confirmHandlers.accept) DOM['confirm-accept'].removeEventListener('click', confirmHandlers.accept);
     if (confirmHandlers.cancel) DOM['confirm-cancel'].removeEventListener('click', confirmHandlers.cancel);
 
     confirmHandlers.accept = () => {
-        DOM['confirm-modal'].style.display = 'none';
+        if (DOM['confirm-modal']) DOM['confirm-modal'].style.display = 'none';
         onAccept();
     };
     confirmHandlers.cancel = () => {
-        DOM['confirm-modal'].style.display = 'none';
+        if (DOM['confirm-modal']) DOM['confirm-modal'].style.display = 'none';
     };
 
-    DOM['confirm-accept'].addEventListener('click', confirmHandlers.accept);
-    DOM['confirm-cancel'].addEventListener('click', confirmHandlers.cancel);
+    if (DOM['confirm-accept']) DOM['confirm-accept'].addEventListener('click', confirmHandlers.accept);
+    if (DOM['confirm-cancel']) DOM['confirm-cancel'].addEventListener('click', confirmHandlers.cancel);
 }
 
 function getCurrentChapter() {
@@ -176,6 +192,12 @@ function getCurrentChapter() {
 function getCurrentScene() {
     const chapter = getCurrentChapter();
     return chapter ? (chapter.scenes[gameState.scene] || null) : null;
+}
+
+function getPronounText(masc, fem, neutro) {
+    if (gameState.playerPronoun === 'masculino') return masc;
+    if (gameState.playerPronoun === 'feminino') return fem;
+    return neutro;
 }
 
 // ============================================
@@ -189,10 +211,13 @@ const CHARACTERS = {
         expressions: { normal: '📖' }
     },
     player: {
-        name: 'Você',
-        avatar: '🧑',
+        get name() { return gameState.playerName || 'Alex'; },
+        get avatar() { return gameState.playerAvatar || '🧑'; },
         nameClass: 'player',
-        expressions: { normal: '🧑', worried: '😟', determined: '😤', happy: '😊' }
+        expressions: { 
+            get normal() { return gameState.playerAvatar || '🧑'; }, 
+            worried: '😟', determined: '😤', happy: '😊' 
+        }
     },
     rafael: {
         name: 'Rafael',
@@ -233,17 +258,21 @@ const CHARACTERS = {
 };
 
 // ============================================
-// CONQUISTAS
+// CONQUISTAS (NORMAIS + SECRETAS)
 // ============================================
 const ACHIEVEMENTS = {
-    guardian: { id: 'guardian', icon: '🛡️', name: 'Guardião Digital', desc: 'Tomou decisões seguras em todas as situações.' },
-    empath: { id: 'empath', icon: '💜', name: 'Grande Aliado', desc: 'Apoiou todos os personagens que precisaram de ajuda.' },
-    reporter: { id: 'reporter', icon: '🚨', name: 'Voz Ativa', desc: 'Denunciou perfis ou imagens falsas.' },
-    witness: { id: 'witness', icon: '👀', name: 'Testemunha Atenta', desc: 'Identificou os ataques de cyberbullying de imediato.' },
-    secondChance: { id: 'secondChance', icon: '🔄', name: 'Segunda Chance', desc: 'Jogou novamente buscando mudar o rumo das escolhas.' },
-    brave: { id: 'brave', icon: '🦁', name: 'Corajoso', desc: 'Defendeu Rafael publicamente e de forma responsável.' },
-    investigator: { id: 'investigator', icon: '🔎', name: 'Investigador Digital', desc: 'Encontrou todas as evidências cruciais do caso.' },
-    trueFriend: { id: 'trueFriend', icon: '🤝', name: 'Amigo de Verdade', desc: 'Conquistou a confiança total do Rafael.' }
+    guardian: { id: 'guardian', icon: '🛡️', name: 'Guardião Digital', desc: 'Tomou decisões seguras em todas as situações.', secret: false },
+    empath: { id: 'empath', icon: '💜', name: 'Grande Aliado', desc: 'Apoiou todos os personagens que precisaram de ajuda.', secret: false },
+    reporter: { id: 'reporter', icon: '🚨', name: 'Voz Ativa', desc: 'Denunciou perfis ou imagens falsas.', secret: false },
+    witness: { id: 'witness', icon: '👀', name: 'Testemunha Atenta', desc: 'Identificou os ataques de cyberbullying de imediato.', secret: false },
+    secondChance: { id: 'secondChance', icon: '🔄', name: 'Segunda Chance', desc: 'Jogou novamente buscando mudar o rumo das escolhas.', secret: false },
+    brave: { id: 'brave', icon: '🦁', name: 'Corajoso', desc: 'Defendeu Rafael publicamente e de forma responsável.', secret: false },
+    investigator: { id: 'investigator', icon: '🔎', name: 'Perito Digital', desc: 'Encontrou todas as evidências cruciais do caso.', secret: false },
+    trueFriend: { id: 'trueFriend', icon: '🤝', name: 'Amigo de Verdade', desc: 'Conquistou a confiança total do Rafael.', secret: false },
+    // Conquistas Secretas
+    detetivePerfeito: { id: 'detetivePerfeito', icon: '🕵️‍♂️', name: 'Detetive Perfeito', desc: 'Encontrou todas as pistas sem cair em nenhuma pista falsa.', secret: true },
+    influenciadorPositivo: { id: 'influenciadorPositivo', icon: '⭐', name: 'Influenciador Positivo', desc: 'Alcançou 100 de empatia e confiança na mesma partida.', secret: true },
+    diplomata: { id: 'diplomata', icon: '🕊️', name: 'Diplomata Digital', desc: 'Manteve relacionamentos altos com Rafael, Bia E Lucas.', secret: true }
 };
 
 // ============================================
@@ -261,7 +290,7 @@ const EVIDENCE_CATALOG = {
 };
 
 // ============================================
-// HISTÓRIA COMPLETA DE 5 CAPÍTULOS
+// HISTÓRIA COMPLETA — 5 CAPÍTULOS REESCRITOS E DINÂMICOS
 // ============================================
 const chapters = [
     // --- CAPÍTULO 1 ---
@@ -274,14 +303,14 @@ const chapters = [
                 type: 'narrative',
                 visual: '🏫', location: 'Pátio da escola — Segunda-feira',
                 character: 'narrator', expression: 'normal',
-                text: 'Segunda-feira de manhã na Escola Estadual Heitor Vila-Lobos. O sinal do intervalo acaba de tocar. Enquanto você se senta nas arquibancadas do pátio, seu celular vibra repetidamente no bolso.\n\nO grupo principal da sua turma está em polvorosa.',
+                text: () => `Segunda-feira de manhã na Escola Estadual Heitor Vila-Lobos. O sinal do intervalo acaba de tocar. Enquanto você, ${gameState.playerName}, se senta nas arquibancadas do pátio, seu celular vibra repetidamente no bolso.\n\nO grupo principal da sua turma está movimentado.`,
                 choices: [{ text: 'Verificar notificações', next: 1 }]
             },
             {
                 type: 'narrative',
                 visual: '😊', location: 'Pátio da escola',
                 character: 'bia', expression: 'worried',
-                text: '"Ei, você viu o celular?" Bia se aproxima correndo, a testa franzida em preocupação. "A galera da frente tá com os celulares ligados desde a aula de Geografia. Tá rolando uma palhaçada muito errada no grupo..."',
+                text: () => `"Ei, ${gameState.playerName}, você viu o celular?" Bia se aproxima correndo, a testa franzida em preocupação. "A galera tá com os celulares ligados desde a aula de Geografia. Tá rolando uma palhaçada muito errada no grupo..."`,
                 choices: [
                     { text: '"O que estão fazendo lá?"', next: 2, relEffects: { bia: 5 } },
                     { text: 'Apenas puxar o celular e ler', next: 2 }
@@ -296,7 +325,7 @@ const chapters = [
                     { avatar: '🤷', name: 'Fernanda_sz', text: 'Mano, ele não sabe nem segurar a bola de basquete...', time: '10:03' },
                     { avatar: '😎', name: 'Lucas_gamer', text: 'Vou lançar no Conecta pro colégio todo rir kkk', time: '10:04', offensive: true }
                 ],
-                afterText: 'Eles estão atacando a coordenação motora de Rafael, um garoto tímido que costuma desenhar no canto da sala. Alguém tirou uma foto dele caindo na quadra e começou a espalhar.',
+                afterText: 'Eles estão atacando Rafael, um garoto tímido que costuma desenhar no canto da sala. Alguém tirou uma foto dele caindo na quadra e começou a espalhar.',
                 choices: [
                     {
                         letter: 'A', text: 'Entrar na onda: rir e pedir para ver a foto',
@@ -336,25 +365,25 @@ const chapters = [
             {
                 type: 'narrative', visual: '😕',
                 character: 'narrator', expression: 'normal',
-                text: 'Seu riso incitou as mensagens seguintes de Pedro e Fernanda. Rafael passou pelo corredor de cabeça baixa minutos depois, segurando as lágrimas. A zombaria se espalhou pelo andar inferior da escola.',
+                text: 'Seu riso incitou as mensagens seguintes. Rafael passou pelo corredor de cabeça baixa minutos depois, segurando as lágrimas. A zombaria se espalhou.',
                 choices: [{ text: 'Terminar o intervalo', goHub: true }]
             },
             {
                 type: 'narrative', visual: '🤷',
                 character: 'bia', expression: 'sad',
-                text: '"Nossa... ninguém faz nada." Bia murmura, vendo Lucas digitar furiosamente ao fundo. Você guardou o celular, mas a sensação de que algo ruim foi tolerado permanece no ar.',
+                text: '"Nossa... ninguém faz nada." Bia murmura, vendo Lucas digitar furiosamente. Você guardou o celular, mas a sensação de que algo ruim foi tolerado permanece.',
                 choices: [{ text: 'Terminar o intervalo', goHub: true }]
             },
             {
                 type: 'narrative', visual: '📸',
                 character: 'narrator', expression: 'normal',
-                text: 'O print foi salvo na galeria secreta do seu celular. Bia sorri de canto. "Acho excelente. Esses posts costumam ser apagados rapidamente quando a escola descobre."',
+                text: 'O print foi salvo no seu celular. Bia sorri de canto: "Boa. Esses posts costumam ser apagados rapidamente quando a escola descobre."',
                 choices: [{ text: 'Terminar o intervalo', goHub: true }]
             },
             {
                 type: 'narrative', visual: '💬',
                 character: 'player', expression: 'determined',
-                text: 'Sua mensagem fez o chat esfriar. Lucas respondeu com desdém ("Ah, virou fiscal de piada agora?"), mas Pedro parou de mandar emojis de risos. Bia envia uma mensagem privada: "Valeu por se posicionar. Eu estava com medo de falar sozinha."',
+                text: () => `Sua mensagem fez o chat esfriar. Lucas respondeu: "Ah, ${gameState.playerName} virou fiscal de piada agora?". Mas Pedro parou de mandar emojis. Bia te manda mensagem: "Valeu por falar. Eu estava com medo de falar sozinha."`,
                 choices: [{ text: 'Terminar o intervalo', goHub: true }]
             }
         ]
@@ -363,13 +392,13 @@ const chapters = [
     {
         id: 2,
         title: "O Perfil Falso",
-        desc: "Um perfil anônimo surge na rede social Conecta focado apenas em ridicularizar Rafael. Como agir?",
+        desc: "Um perfil anônimo surge no Conecta focado apenas em ridicularizar Rafael. Como agir?",
         scenes: [
             {
                 type: 'narrative', visual: '👤', location: 'Quarto do jogador — Quarta-feira',
                 character: 'narrator', expression: 'normal',
-                text: 'Quarta-feira, 20:45. Você está terminando um trabalho escolar quando um story marcado por colegas no Conecta chama sua atenção.\n\nUm perfil foi criado: @rafael_ridiculo. A foto de exibição é o rosto de Rafael montado no corpo de um burro.',
-                choices: [{ text: 'Abrir a rede social Conecta', next: 1 }]
+                text: 'Quarta-feira, 20:45. Você está terminando um trabalho quando um story marcado por colegas no Conecta chama sua atenção.\n\nUm perfil foi criado: @rafael_ridiculo. A foto de exibição é o rosto de Rafael montado no corpo de um burro.',
+                choices: [{ text: 'Abrir o Conecta', next: 1 }]
             },
             {
                 type: 'phone', phoneType: 'profile',
@@ -378,14 +407,14 @@ const chapters = [
                     bio: '"Fã clube oficial do moleque mais bizarro do colégio. Postamos suas maiores burrices diárias."\n47 seguidores · 3 posts humilhantes.',
                     isFake: true
                 },
-                afterText: 'O bullying virtual escalou de um grupo privado para um espaço público da comunidade. Colegas da turma estão comentando nas fotos de montagens.',
+                afterText: 'O bullying virtual escalou para um espaço público. Colegas da turma estão comentando nas fotos.',
                 choices: [
                     {
                         letter: 'A', text: 'Seguir o perfil falso e marcar amigos',
                         effects: { security: -10, empathy: -20, courage: -10, trust: -15 },
                         relEffects: { rafael: -20, lucas: 10 },
                         flag: 'ch2_followed_fake',
-                        tip: 'Seguir e marcar conhecidos em perfis fakes de perseguição aumenta o engajamento do algoritmo, ampliando o constrangimento e legitimando a agressão.',
+                        tip: 'Seguir e marcar conhecidos em perfis fakes aumenta o engajamento do algoritmo, ampliando o constrangimento e legitimando a agressão.',
                         next: 2
                     },
                     {
@@ -417,44 +446,45 @@ const chapters = [
             {
                 type: 'narrative', visual: '📊',
                 character: 'narrator', expression: 'normal',
-                text: 'Seu follow ajudou a elevar a conta na barra de descobertas da escola. Outros adolescentes começaram a rir na seção de comentários. Rafael agora é assunto de sussurros nos armários.',
+                text: 'Seu follow ajudou a elevar a conta. Outros alunos começaram a rir na seção de comentários. Rafael agora é assunto de sussurros nos armários.',
                 choices: [{ text: 'Investigar quem fez isso', next: 6 }]
             },
             {
                 type: 'narrative', visual: '🤐',
                 character: 'narrator', expression: 'normal',
-                text: 'Você optou por fechar o aplicativo. No dia seguinte, Rafael foi visto sozinho perto da sala dos professores com os olhos vermelhos. Ninguém derrubou a página.',
+                text: 'Você optou por fechar o aplicativo. No dia seguinte, Rafael foi visto sozinho perto da sala dos professores com os olhos vermelhos.',
                 choices: [{ text: 'Investigar quem fez isso', next: 6 }]
             },
             {
                 type: 'narrative', visual: '🚨',
                 character: 'narrator', expression: 'normal',
-                text: 'Sua denúncia por assédio e falsidade ideológica ajudou. O algoritmo enviou o perfil falso para revisão de conteúdo e ele caiu temporariamente nas horas seguintes.',
+                text: 'Sua denúncia ajudou. O algoritmo enviou o perfil falso para revisão de conteúdo e ele caiu temporariamente nas horas seguintes.',
                 choices: [{ text: 'Investigar quem fez isso', next: 6 }]
             },
             {
                 type: 'narrative', visual: '🤝',
                 character: 'rafael', expression: 'sad',
-                text: 'Rafael responde sua mensagem no privado de forma tímida:\n\n"Oi... vi sim. Eu nem queria ir amanhã para a aula. Mas obrigado por avisar e mandar os prints, ajuda saber que alguém não acha isso normal..."',
+                text: () => `Rafael responde sua mensagem de forma tímida:\n\n"Oi, ${gameState.playerName}... vi sim. Eu nem queria ir amanhã para a aula. Mas obrigado por avisar e mandar os prints, ajuda saber que alguém não acha isso normal..."`,
                 choices: [{ text: 'Investigar quem fez isso', next: 6 }]
             },
             {
                 type: 'investigation',
-                desc: 'Clique em cada elemento do mural abaixo para identificar possíveis inconsistências que indiquem a autoria do perfil falso.',
+                desc: 'Clique em cada elemento do mural abaixo para identificar pistas sobre a autoria do perfil falso.',
                 evidenceItems: [
-                    { id: 'ev_post_time', icon: '🕐', label: 'Horários das postagens', detail: 'As fotos foram enviadas precisamente às 22h15 de quarta-feira. Lucas estava jogando e ativo no bate-papo de voz da turma nesse exato horário.' },
-                    { id: 'ev_writing_style', icon: '✍️', label: 'Vícios linguísticos', detail: 'A bio do perfil usa gírias de games muito específicas e o termo "vlw flw", característico do jeito de digitar de Lucas.' },
-                    { id: 'ev_followers', icon: '👥', label: 'Lista de contatos iniciais', detail: 'Os primeiros três seguidores da página foram Pedro, Fernanda e o próprio perfil principal do Lucas.' },
-                    { id: 'ev_photo_source', icon: '📸', label: 'Origem da imagem base', detail: 'A imagem original de Rafael na quadra de esportes foi registrada de um ângulo muito próximo de onde Lucas estava sentado.' }
+                    { id: 'ev_post_time', icon: '🕐', label: 'Horários das postagens', detail: 'As fotos foram enviadas às 22h15 de quarta-feira. Lucas estava jogando e ativo no bate-papo de voz da turma nesse exato horário.' },
+                    { id: 'ev_writing_style', icon: '✍️', label: 'Vícios linguísticos', detail: 'A bio usa gírias de games muito específicas e o termo "vlw flw", característico do jeito de digitar do Lucas.' },
+                    { id: 'ev_followers', icon: '👥', label: 'Lista de contatos iniciais', detail: 'Os primeiros seguidores da página foram Pedro, Fernanda e o próprio perfil do Lucas.' },
+                    { id: 'ev_photo_source', icon: '📸', label: 'Origem da imagem base', detail: 'A imagem original de Rafael na quadra foi tirada de um ângulo muito próximo de onde Lucas estava sentado.' },
+                    { id: 'ev_false_lead', icon: '❓', label: 'Comentário do Pedro', detail: 'Pedro comentou "kkk quem fez isso é mestre", mas o IP de login do perfil não coincide com a casa dele. (PISTA FALSA)', isFalseLead: true }
                 ],
-                afterText: 'As evidências apontam fortemente para Lucas, mas lembre-se: expor suspeitas públicas sem provas confiáveis também gera linchamento digital. Qual será sua conduta?',
+                afterText: 'As evidências apontam fortemente para Lucas. Expor suspeitas públicas sem provas confiáveis também gera linchamento digital. Qual será sua conduta?',
                 choices: [
                     {
                         letter: 'A', text: 'Confrontar Lucas no chat público do grupo de jogos',
                         effects: { security: -5, empathy: 5, courage: 10, trust: -10 },
                         relEffects: { lucas: -20, rafael: -5 },
                         flag: 'ch2_confronted_lucas',
-                        tip: 'Acusações digitais informais sem base consolidada dão espaço para que o agressor se faça de vítima, inflamando o ódio contra você.',
+                        tip: 'Acusações informais sem base consolidada dão espaço para que o agressor se faça de vítima, inflamando o conflito.',
                         next: 7
                     },
                     {
@@ -471,13 +501,13 @@ const chapters = [
             {
                 type: 'narrative', visual: '😠',
                 character: 'lucas', expression: 'angry',
-                text: '"Tá maluco?!" Lucas responde irado no chat do game. "Só porque eu sigo o post quer dizer que fui eu que criei? Não viaja, nerd do caramba!"\n\nA discussão dispersou as pessoas e deixou Lucas alerta. Ele apagou vestígios digitais e as pistas sumiram.',
+                text: '"Tá maluco?!" Lucas responde irado. "Só porque eu sigo quer dizer que fui eu? Não viaja!". A discussão deixou Lucas alerta e ele apagou vestígios.',
                 choices: [{ text: 'Prosseguir na semana', goHub: true }]
             },
             {
                 type: 'narrative', visual: '👩‍🏫',
                 character: 'ana', expression: 'serious',
-                text: 'Professora Ana ouve e analisa seu PDF de evidências detalhadamente. "Excelente iniciativa em documentar isso de maneira reservada. Esse dossiê impede que eles neguem o ocorrido. Vou encaminhar à coordenação para intervir legalmente."',
+                text: () => `"Excelente iniciativa em documentar isso de maneira reservada, ${gameState.playerName}. Esse dossiê impede que neguem o ocorrido. Vou encaminhar à coordenação."`,
                 choices: [{ text: 'Prosseguir na semana', goHub: true }]
             }
         ]
@@ -486,24 +516,24 @@ const chapters = [
     {
         id: 3,
         title: "O Grupo de Exclusão",
-        desc: "Você é arrastado para um canal de chat clandestino criado especificamente para isolar Rafael.",
+        desc: "Você é arrastado para um chat clandestino criado especificamente para isolar Rafael.",
         scenes: [
             {
                 type: 'reflection',
-                question: 'Imagine que um grupo de colegas influentes da sua turma cria um chat secreto com a única intenção de decidir quem será banido das atividades sociais e festas. Se você sair, pode virar o próximo alvo.\n\nQual decisão você costuma tomar diante de cenários de pressão social real?',
+                question: 'Imagine que um grupo de colegas influentes da sua turma cria um chat secreto para decidir quem será banido das festas e trabalhos. Se você sair, pode virar o próximo alvo.\n\nQual decisão você costuma tomar diante de cenários de pressão social real?',
                 reflectionChoices: [
                     'Permanecer calado para autopreservação',
                     'Sair do chat mesmo sob risco de retaliação',
                     'Ficar e contestar as atitudes ofensivas',
                     'Coletar as provas e denunciar aos responsáveis'
                 ],
-                feedback: 'A pressão de grupo é uma das maiores causas de negligência digital. Permanecer passivo legitima os agressores. Sair do grupo e reportar aos mentores escolares quebra o círculo vicioso do bullying sem colocar você em risco físico direto.',
+                feedback: 'A pressão de grupo é uma das maiores causas de negligência digital. Permanecer passivo legitima os agressores. Sair do grupo e reportar aos mentores escolares quebra o círculo vicioso do bullying sem colocar você em risco direto.',
                 next: 1
             },
             {
                 type: 'narrative', visual: '📱', location: 'Quarto do jogador — Sexta-feira à noite',
                 character: 'narrator', expression: 'normal',
-                text: 'Sexta-feira à noite. Você recebe um alerta vibratório de um aplicativo de mensagens de comunidade:\n\n"Pedro.zz incluiu seu perfil no chat de conferência: BANDO DO 9B (Sem o Esquisito)"',
+                text: 'Sexta-feira à noite. Você recebe um alerta vibratório de um aplicativo de mensagens:\n\n"Pedro.zz incluiu seu perfil no chat de conferência: BANDO DO 9B (Sem o Esquisito)"',
                 choices: [{ text: 'Acessar o chat secreto', next: 2 }]
             },
             {
@@ -515,14 +545,14 @@ const chapters = [
                     { avatar: '😎', name: 'Lucas_gamer', text: 'Até que enfim espaço livre de gente chata', time: '19:16' },
                     { avatar: '😊', name: 'Bia_oficial', text: 'Gente, eu fui adicionada mas acho isso de exclusão muito infantil, na boa', time: '19:17' }
                 ],
-                afterText: 'O isolamento social sistemático e deliberado é tipificado como violência psicológica. Há muita pressão para manter a panelinha coesa contra o garoto.',
+                afterText: 'O isolamento social sistemático é uma forma de violência psicológica. Há muita pressão para manter a panelinha coesa.',
                 choices: [
                     {
                         letter: 'A', text: 'Concordar e ajudar a planejar o isolamento do Rafael',
                         effects: { security: -15, empathy: -25, courage: -10, trust: -20 },
                         relEffects: { rafael: -20, bia: -15, lucas: 15 },
                         flag: 'ch3_participated',
-                        tip: 'Participar ativamente de projetos de isolamento de um aluno é assédio moral e pode gerar sansões escolares pesadas de acordo com as leis anti-bullying.',
+                        tip: 'Participar ativamente de projetos de isolamento de um aluno é assédio moral e pode gerar sansões escolares pesadas.',
                         next: 3
                     },
                     {
@@ -558,25 +588,25 @@ const chapters = [
             {
                 type: 'narrative', visual: '😬',
                 character: 'narrator', expression: 'normal',
-                text: 'Sua conivência deu força à exclusão. Rafael foi deixado de fora do trabalho de História por todos e acabou realizando a atividade sozinho na biblioteca, visivelmente abalado.',
+                text: 'Sua conivência deu força à exclusão. Rafael foi deixado de fora do trabalho de História por todos e acabou realizando a atividade sozinho na biblioteca.',
                 choices: [{ text: 'Continuar', goHub: true }]
             },
             {
                 type: 'narrative', visual: '😶',
                 character: 'bia', expression: 'worried',
-                text: 'Bia mandou mensagem irritada no dia seguinte: "Você viu como eles planejaram ignorar ele no pátio? E ninguém diz nada naquele maldito chat público. É triste demais..."',
+                text: () => `"Você viu como eles planejaram ignorar ele, ${gameState.playerName}? E ninguém diz nada naquele chat. É triste demais..."`,
                 choices: [{ text: 'Continuar', goHub: true }]
             },
             {
                 type: 'narrative', visual: '🚪',
                 character: 'bia', expression: 'relieved',
-                text: 'Sua saída do grupo inspirou Bia a fazer o mesmo minutos depois. O bando perdeu duas testemunhas silenciosas de uma só vez, enfraquecendo a narrativa agressora do grupo.',
+                text: 'Sua saída do grupo inspirou Bia a fazer o mesmo minutos depois. O bando perdeu duas testemunhas silenciosas de uma só vez.',
                 choices: [{ text: 'Continuar', goHub: true }]
             },
             {
                 type: 'narrative', visual: '🏫',
                 character: 'ana', expression: 'serious',
-                text: 'Professora Ana acionou a coordenação imediatamente. "Esta organização secreta de alunos para isolar outros é uma infração grave. Ter os prints dos administradores e membros nos poupa tempo de apuração."',
+                text: 'Professora Ana acionou a coordenação imediatamente. "Esta organização secreta para isolar alunos é uma infração grave. Ter os prints dos membros nos poupa tempo."',
                 choices: [{ text: 'Continuar', goHub: true }]
             }
         ]
@@ -585,12 +615,12 @@ const chapters = [
     {
         id: 4,
         title: "A Imagem Vazada",
-        desc: "Uma foto de caráter estritamente pessoal e de privacidade confidencial do Rafael cai nas redes sociais.",
+        desc: "Uma foto de caráter estritamente pessoal do Rafael cai nas redes sociais.",
         scenes: [
             {
                 type: 'narrative', visual: '⚠️', location: 'Refeitório — Terça-feira',
                 character: 'bia', expression: 'scared',
-                text: 'Terça-feira, hora do lanche. Bia puxa você com força para debaixo da escada do pavilhão. "É grave... muito grave. Conseguiram hackear ou roubar o celular do Rafael e pegaram uma foto dele de cueca em um exame médico. Estão encaminhando no Conecta..."',
+                text: () => `Terça-feira, hora do lanche. Bia puxa você para debaixo da escada. "${gameState.playerName}, é grave... muito grave. Conseguiram uma foto pessoal do Rafael de exame médico e estão encaminhando no Conecta..."`,
                 choices: [{ text: 'Analisar notificações', next: 1 }]
             },
             {
@@ -600,14 +630,14 @@ const chapters = [
                     { icon: '📩', text: 'Pedro.zz encaminhou um arquivo de imagem', time: '1 min' },
                     { icon: '🌐', text: 'Mencionaram você na publicação de vazamento no Conecta', time: '3 min' }
                 ],
-                afterText: 'O vazamento de fotos íntimas ou de nudez parcial sem consentimento é crime grave tipificado no Código Penal brasileiro. O refeitório está em alvoroço.',
+                afterText: 'O vazamento de fotos íntimas ou de privacidade sem consentimento é crime. O refeitório está em alvoroço.',
                 choices: [
                     {
                         letter: 'A', text: 'Encaminhar o conteúdo para rir com contatos externos',
                         effects: { security: -20, empathy: -30, courage: -15, trust: -25 },
                         relEffects: { rafael: -30, bia: -20, lucas: 10 },
                         flag: 'ch4_shared_image',
-                        tip: 'Repassar fotos íntimas, além de um dano irreversível para a vítima, torna você coautor de um crime passível de punição civil e penal pela justiça de menores.',
+                        tip: 'Repassar fotos íntimas, além de um dano irreversível para a vítima, torna você coautor de um crime passível de punição civil e penal.',
                         next: 2
                     },
                     {
@@ -615,7 +645,7 @@ const chapters = [
                         effects: { security: -5, empathy: -10, courage: 0, trust: -10 },
                         flag: 'ch4_kept_image',
                         actionStat: 'contentNotShared',
-                        tip: 'Armazenar fotos íntimas de terceiros sem consentimento em seu dispositivo pessoal viola diretrizes de privacidade e termos éticos.',
+                        tip: 'Armazenar fotos íntimas de terceiros sem consentimento viola diretrizes de privacidade e termos éticos.',
                         next: 3
                     },
                     {
@@ -641,25 +671,25 @@ const chapters = [
             {
                 type: 'narrative', visual: '💔',
                 character: 'narrator', expression: 'normal',
-                text: 'Sua atitude de encaminhar fez com que o vazamento chegasse aos grupos das escolas vizinhas. Rafael entrou em surto emocional, foi internado com crise severa de pânico e não sairá mais de casa este semestre.',
+                text: 'Sua atitude de encaminhar fez com que o vazamento chegasse às escolas vizinhas. Rafael entrou em crise de pânico e não sairá mais de casa este semestre.',
                 choices: [{ text: 'Ir para a Reunião Final', goHub: true }]
             },
             {
                 type: 'narrative', visual: '😔',
                 character: 'narrator', expression: 'normal',
-                text: 'A foto permaneceu no seu dispositivo por dias. Embora você não tenha encaminhado, sua omissão permitiu que o assédio moral continuasse desenfreado pelos corredores.',
+                text: 'A foto permaneceu no seu dispositivo. Embora você não tenha encaminhado, sua omissão permitiu que o assédio moral continuasse desenfreado.',
                 choices: [{ text: 'Ir para a Reunião Final', goHub: true }]
             },
             {
                 type: 'narrative', visual: '🗑️',
                 character: 'bia', expression: 'relieved',
-                text: '"Você apagou né? Eu também deletei de imediato. Isso é nojento demais..." Bia balança a cabeça aliviada. Mas o assunto continua correndo de boca em boca na cantina. É preciso que os mentores entrem em campo.',
+                text: '"Você apagou né? Eu também deletei de imediato. Isso é nojento demais..." Bia balança a cabeça aliviada. É preciso que a escola entre em campo.',
                 choices: [{ text: 'Ir para a Reunião Final', goHub: true }]
             },
             {
                 type: 'narrative', visual: '✊',
                 character: 'ana', expression: 'serious',
-                text: 'Professora Ana aciona os pais de Lucas e de Pedro na coordenação imediatamente. "Com esses prints registrando os remetentes iniciais, temos material probatório indiscutível para o Conselho Tutelar e a polícia de crimes digitais."',
+                text: 'Professora Ana aciona os pais de Lucas e Pedro na coordenação. "Com esses prints dos remetentes iniciais, temos material indiscutível para o Conselho Tutelar e a polícia de crimes digitais."',
                 choices: [{ text: 'Ir para a Reunião Final', goHub: true }]
             }
         ]
@@ -673,7 +703,7 @@ const chapters = [
             {
                 type: 'narrative', visual: '🌅', location: 'Auditório da Escola — Sexta-feira',
                 character: 'narrator', expression: 'normal',
-                text: 'Uma semana após o auge da crise. A escola está reunida no auditório principal para discutir segurança digital, responsabilidade social e empatia.\n\nRafael está presente na última fileira, ainda retraído e quieto. Ele avista você.',
+                text: 'Uma semana após a crise. A escola está reunida no auditório principal para discutir segurança digital, responsabilidade e empatia.\n\nRafael está presente na última fileira, ainda retraído. Ele avista você.',
                 choices: [{ text: 'Ouvir conversa', next: 1 }]
             },
             {
@@ -686,12 +716,13 @@ const chapters = [
                 },
                 text: function() {
                     const r = gameState.relationships.rafael;
+                    const p = gameState.playerName;
                     if (r >= 70) {
-                        return '"Ei... eu queria agradecer de verdade. Quando toda aquela loucura começou com o perfil falso e as mensagens, eu achei que ia ter que sair da escola. Mas você se importou de verdade em me ajudar..."';
+                        return `"Ei, ${p}... eu queria agradecer de verdade. Quando toda aquela loucura começou, eu achei que ia ter que sair da escola. Mas você se importou de verdade em me ajudar..."`;
                     } else if (r >= 45) {
-                        return '"Oi... as coisas estão um pouco difíceis, mas fico aliviado que a professora interveio. Obrigado por não ter me atacado na internet de qualquer forma..."';
+                        return `"Oi, ${p}... as coisas estão um pouco difíceis, mas fico aliviado que a professora interveio. Obrigado por não ter me atacado na internet..."`;
                     } else {
-                        return '"..." Rafael desvia os olhos de forma amedrontada quando você tenta se aproximar. Ele não confia em absolutamente ninguém da turma.';
+                        return '"..." Rafael desvia os olhos de forma amedrontada quando você tenta se aproximar. Ele não confia em ninguém da turma.';
                     }
                 },
                 choices: [{ text: 'Prestar atenção na assembleia', next: 2 }]
@@ -704,9 +735,9 @@ const chapters = [
                 },
                 text: function() {
                     if (gameState.relationships.bia >= 65) {
-                        return '"A diretora quer que algum aluno vá lá na frente dar o depoimento para abrir o debate. Que bom que agimos juntos nisso. Vai lá e representa a gente."';
+                        return '"A diretora quer que algum aluno vá lá na frente dar o depoimento. Que bom que agimos juntos nisso. Vai lá e representa a gente!"';
                     } else {
-                        return '"A diretora está chamando alguém para falar na tribuna. Todo mundo tá fingindo que não vê nada. O silêncio deles é doloroso..."';
+                        return '"A diretora está chamando alguém para falar na tribuna. Todo mundo tá fingindo que não vê nada. O silêncio é doloroso..."';
                     }
                 },
                 choices: [{ text: 'Subir ao palco do auditório', next: 3 }]
@@ -714,7 +745,7 @@ const chapters = [
             {
                 type: 'narrative', visual: '🎤', location: 'Tribuna do auditório',
                 character: 'narrator', expression: 'normal',
-                text: 'A diretora passa o microfone. A plateia de alunos está dispersa, muitos ainda usando celulares de forma oculta pelas calças. Qual será sua atitude?',
+                text: 'A diretora passa o microfone. A plateia de alunos está dispersa. Qual será sua atitude?',
                 choices: [
                     {
                         letter: 'A', text: 'Não falar nada e devolver o microfone',
@@ -745,7 +776,7 @@ const chapters = [
                         effects: { security: 20, empathy: 15, courage: 15, trust: 15 },
                         relEffects: { rafael: 10, bia: 15 },
                         flag: 'ch5_full_action',
-                        decisionText: 'Você formalizou diretrizes éticas e práticas contra abusos escolares.',
+                        decisionText: 'Você formalizou diretrizes éticas contra abusos escolares.',
                         actionStat: 'reports',
                         next: 7
                     }
@@ -760,19 +791,19 @@ const chapters = [
             {
                 type: 'narrative', visual: '🎤',
                 character: 'player', expression: 'determined',
-                text: '"Cyberbullying não é brincadeira. Quando rimos de fotos roubadas, criamos os monstros que nos atormentam amanhã. Nós somos responsáveis por quem é excluído nos chats..."\n\nSua fala arrancou palmas do pavilhão de cima. Rafael sorri tímido pela primeira vez.',
+                text: '"Cyberbullying não é brincadeira. Quando rimos de fotos roubadas, criamos os monstros que nos atormentam amanhã. Nós somos responsáveis por quem é excluído nos chats..."\n\nSua fala arrancou palmas do pavilhão. Rafael sorri tímido pela primeira vez.',
                 choices: [{ text: 'Ver Resultados', end: true }]
             },
             {
                 type: 'narrative', visual: '💚',
                 character: 'rafael', expression: 'relieved',
-                text: 'Você caminha e se senta ao lado de Rafael. No início ele hesita, mas depois desabafa sobre tudo. Bia junta-se a vocês. Ali no auditório, longe das telas de ódio, um laço de amizade real e duradouro começou a se reconstruir.',
+                text: 'Você caminha e se senta ao lado de Rafael. No início ele hesita, mas depois desabafa sobre tudo. Bia junta-se a vocês. Ali no auditório, longe das telas de ódio, um laço de amizade real começou a se reconstruir.',
                 choices: [{ text: 'Ver Resultados', end: true }]
             },
             {
                 type: 'narrative', visual: '🌟',
                 character: 'narrator', expression: 'normal',
-                text: 'Sua proposta de canal anônimo de denúncias foi aprovada e integrada à grade educacional. Os agressores agora pensam duas vezes antes de iniciar deboches digitais, pois sabem que a rede de denúncia escolar é ativa e vigilante. Rafael finalmente respira aliviado.',
+                text: 'Sua proposta de canal anônimo de denúncias foi aprovada e integrada à grade educacional. Os agressores agora pensam duas vezes antes de iniciar deboches digitais. Rafael finalmente respira aliviado.',
                 choices: [{ text: 'Ver Resultados', end: true }]
             }
         ]
@@ -780,17 +811,19 @@ const chapters = [
 ];
 
 // ============================================
-// ELEMENTOS DO DOM
+// ELEMENTOS DO DOM (CACHE COMPLETO)
 // ============================================
 const DOM = {};
 function cacheDom() {
     const ids = [
-        'loading-screen','menu-screen','settings-screen','about-screen','achievements-screen',
+        'loading-screen','menu-screen','settings-screen','about-screen','achievements-screen','learn-screen','player-setup-screen',
         'game-screen','hub-screen','chapter-transition','result-screen',
-        'loading-bar','loading-text',
-        'btn-new-game','btn-continue','btn-achievements-menu','btn-settings','btn-about',
-        'btn-settings-back','toggle-music','toggle-sfx','toggle-animations','text-speed','btn-clear-data',
-        'btn-about-back','btn-achievements-back','achievements-grid',
+        'loading-bar','loading-text','menu-stats',
+        'btn-new-game','btn-continue','btn-achievements-menu','btn-learn-more','btn-settings','btn-about',
+        'btn-settings-back','toggle-music','toggle-sfx','volume-slider','toggle-animations','text-speed','btn-clear-data',
+        'btn-about-back','btn-achievements-back','btn-learn-back','btn-setup-back','btn-start-game',
+        'input-player-name','avatar-grid',
+        'achievements-grid',
         'btn-game-menu','chapter-indicator','chapter-title-header',
         'ms-security','ms-empathy','ms-courage','ms-trust',
         'narrative-container','scene-visual','scene-location','character-display','char-avatar-large','char-expression',
@@ -798,25 +831,26 @@ function cacheDom() {
         'phone-container','phone-screen','phone-time','phone-nav-bar','notif-badge',
         'investigation-container','investigation-desc','evidence-board','evidence-list','investigation-choices',
         'reflection-container','reflection-question','reflection-choices','reflection-feedback','reflection-tip-text','reflection-continue-btn',
-        'game-sidebar','sidebar-overlay','btn-close-sidebar',
+        'game-sidebar','sidebar-overlay','btn-close-sidebar','sidebar-player-info','sidebar-avatar','sidebar-player-name',
         'sf-security','sf-empathy','sf-courage','sf-trust','sv-security','sv-empathy','sv-courage','sv-trust',
         'rel-rafael','rel-bia','rel-lucas','relv-rafael','relv-bia','relv-lucas',
         'sidebar-evidence','sidebar-achievements-list',
         'btn-save-game','btn-back-menu',
         'hub-completed','hub-phone-btn','hub-evidence-btn','hub-relationships-btn','hub-continue-btn','hub-next-chapter-desc','hub-phone-badge',
-        'hub-phone-panel','hub-phone-content','hub-evidence-panel','hub-evidence-content','hub-relationships-panel','hub-relationships-content',
+        'hub-phone-panel','hub-phone-title','hub-phone-content','hub-chat-panel','hub-chat-title','hub-chat-content','hub-chat-input-area',
+        'hub-evidence-panel','hub-evidence-content','hub-relationships-panel','hub-relationships-content',
         'transition-chapter-num','transition-title','transition-desc',
         'tip-overlay','tip-text','btn-close-tip',
         'achievement-toast','ach-toast-icon','ach-toast-name',
         'stat-toast-container',
         'evidence-toast','evidence-toast-name',
-        'rel-toast','rel-toast-avatar','rel-toast-text',
+        'rel-toast','rel-toast-avatar','rel-toast-text','share-toast',
         'result-emoji','result-header','result-title','result-subtitle',
         'result-profile-card','profile-badge-icon','profile-title','profile-desc',
         'rs-security','rs-empathy','rs-courage','rs-trust','rsv-security','rsv-empathy','rsv-courage','rsv-trust',
         'result-action-stats','action-stats-grid',
         'result-decisions-list','result-achievements-list','result-message',
-        'btn-play-again','btn-result-menu',
+        'btn-play-again','btn-share-result','btn-result-menu',
         'confirm-modal','confirm-title','confirm-text','confirm-cancel','confirm-accept',
         'scene-image-container',
         'phone-nav-messages','phone-nav-conecta','phone-nav-notifications','phone-nav-evidence'
@@ -828,11 +862,14 @@ function cacheDom() {
 // SALVAMENTO NO LOCALSTORAGE
 // ============================================
 const SaveSystem = {
-    KEY: 'por_tras_da_tela_save_v4',
-    SKEY: 'por_tras_da_tela_settings_v4',
+    KEY: 'por_tras_da_tela_save_v5',
+    SKEY: 'por_tras_da_tela_settings_v5',
     save() {
         try {
             localStorage.setItem(this.KEY, JSON.stringify({
+                playerName: gameState.playerName,
+                playerAvatar: gameState.playerAvatar,
+                playerPronoun: gameState.playerPronoun,
                 chapter: gameState.chapter, scene: gameState.scene,
                 security: gameState.security, empathy: gameState.empathy,
                 courage: gameState.courage, trust: gameState.trust,
@@ -841,7 +878,9 @@ const SaveSystem = {
                 relationships: gameState.relationships,
                 evidence: gameState.evidence,
                 actionStats: gameState.actionStats,
+                gamesPlayed: gameState.gamesPlayed,
                 hasPlayed: gameState.hasPlayed, lastEnding: gameState.lastEnding,
+                chatRepliesUsed: gameState.chatRepliesUsed,
                 savedAt: Date.now()
             }));
             return true;
@@ -879,7 +918,7 @@ function showStatToast(label, value) {
 function showEvidenceToast(name) {
     const el = DOM['evidence-toast'];
     if (!el) return;
-    DOM['evidence-toast-name'].textContent = name;
+    if (DOM['evidence-toast-name']) DOM['evidence-toast-name'].textContent = name;
     el.style.display = 'flex';
     el.style.animation = 'none';
     void el.offsetWidth;
@@ -893,14 +932,24 @@ function showRelToast(charId, value) {
     if (!char) return;
     const el = DOM['rel-toast'];
     if (!el) return;
-    DOM['rel-toast-avatar'].textContent = char.avatar;
+    if (DOM['rel-toast-avatar']) DOM['rel-toast-avatar'].textContent = char.avatar;
     const sign = value > 0 ? '+' : '';
-    DOM['rel-toast-text'].textContent = `${char.name} ${sign}${value} de afinidade`;
+    if (DOM['rel-toast-text']) DOM['rel-toast-text'].textContent = `${char.name} ${sign}${value} de afinidade`;
     el.style.display = 'flex';
     el.style.animation = 'none';
     void el.offsetWidth;
     el.style.animation = 'slideInLeft .3s ease, fadeOut .4s ease 2s forwards';
     setTimeout(() => { el.style.display = 'none'; }, 2800);
+}
+
+function showShareToast() {
+    const el = DOM['share-toast'];
+    if (!el) return;
+    el.style.display = 'block';
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = 'fadeInUp .3s ease, fadeOut .3s ease 2s forwards';
+    setTimeout(() => { el.style.display = 'none'; }, 2500);
 }
 
 // ============================================
@@ -968,8 +1017,23 @@ function updateChapterHeader() {
     }
 }
 
+function updateSidebarPlayerInfo() {
+    if (DOM['sidebar-avatar']) DOM['sidebar-avatar'].textContent = gameState.playerAvatar || '🧑';
+    if (DOM['sidebar-player-name']) DOM['sidebar-player-name'].textContent = gameState.playerName || 'Alex';
+}
+
+function updateMenuStats() {
+    if (DOM['menu-stats']) {
+        if (gameState.gamesPlayed > 0) {
+            DOM['menu-stats'].textContent = `🎮 Partidas jogadas: ${gameState.gamesPlayed} | 🏆 Conquistas: ${gameState.achievements.length}/${Object.keys(ACHIEVEMENTS).length}`;
+        } else {
+            DOM['menu-stats'].textContent = '';
+        }
+    }
+}
+
 function updateAllUI() {
-    updateStatsUI(); updateRelationshipsUI(); updateEvidenceUI(); updateAchievementsUI(); updateChapterHeader();
+    updateStatsUI(); updateRelationshipsUI(); updateEvidenceUI(); updateAchievementsUI(); updateChapterHeader(); updateSidebarPlayerInfo();
 }
 
 // ============================================
@@ -999,6 +1063,18 @@ function checkAchievements() {
     }
     if (!gameState.achievements.includes('trueFriend')) {
         if (r.rafael >= 80) unlockAchievement('trueFriend');
+    }
+    // Conquistas Secretas
+    if (!gameState.achievements.includes('detetivePerfeito')) {
+        if (f['ch2_investigated_properly'] && !f['ch2_confronted_lucas'] && gameState.actionStats.evidenceFound >= 4) {
+            unlockAchievement('detetivePerfeito');
+        }
+    }
+    if (!gameState.achievements.includes('influenciadorPositivo')) {
+        if (gameState.empathy >= 95 && gameState.trust >= 95) unlockAchievement('influenciadorPositivo');
+    }
+    if (!gameState.achievements.includes('diplomata')) {
+        if (r.rafael >= 65 && r.bia >= 65 && r.lucas >= 65) unlockAchievement('diplomata');
     }
 }
 
@@ -1033,8 +1109,10 @@ function closeTip() {
 }
 
 // ============================================
-// VELOCIDADE DE DIGITAÇÃO DO TEXTO
+// VELOCIDADE DE DIGITAÇÃO DO TEXTO (FIXED DUP BUGS)
 // ============================================
+let activeTypewriterInterval = null;
+
 function getTextSpeed() {
     const speeds = { fast: 8, normal: 18, slow: 35, instant: 0 };
     return speeds[settings.textSpeed] || 18;
@@ -1042,14 +1120,41 @@ function getTextSpeed() {
 
 function typewriter(element, text, callback) {
     if (!element) return;
+    if (activeTypewriterInterval) {
+        clearInterval(activeTypewriterInterval);
+        activeTypewriterInterval = null;
+    }
+
     const speed = getTextSpeed();
-    if (speed === 0 || !settings.animations) { element.textContent = text; if (callback) callback(); return; }
-    let i = 0; element.textContent = '';
-    const interval = setInterval(() => {
-        if (i < text.length) { element.textContent += text[i]; i++; }
-        else { clearInterval(interval); if (callback) callback(); }
+    if (speed === 0 || !settings.animations) { 
+        element.textContent = text; 
+        if (callback) callback(); 
+        return; 
+    }
+
+    let i = 0; 
+    element.textContent = '';
+    
+    activeTypewriterInterval = setInterval(() => {
+        if (i < text.length) { 
+            element.textContent += text[i]; 
+            i++; 
+        } else { 
+            clearInterval(activeTypewriterInterval); 
+            activeTypewriterInterval = null;
+            if (callback) callback(); 
+        }
     }, speed);
-    const skip = () => { clearInterval(interval); element.textContent = text; element.removeEventListener('click', skip); if (callback) callback(); };
+
+    const skip = () => { 
+        if (activeTypewriterInterval) {
+            clearInterval(activeTypewriterInterval); 
+            activeTypewriterInterval = null;
+        }
+        element.textContent = text; 
+        element.removeEventListener('click', skip); 
+        if (callback) callback(); 
+    };
     element.addEventListener('click', skip);
 }
 
@@ -1115,6 +1220,7 @@ function renderNarrativeScene(scene) {
 
     let text = typeof scene.text === 'function' ? scene.text() : scene.text;
     if (DOM['dialogue-continue']) DOM['dialogue-continue'].style.display = 'none';
+    
     typewriter(DOM['dialogue-text'], text, () => {
         if (scene.choices && scene.choices.length > 0) {
             if (DOM['dialogue-continue']) DOM['dialogue-continue'].style.display = 'none';
@@ -1253,6 +1359,26 @@ function renderPhoneChat(scene) {
 function renderPhoneConecta(scene) {
     let h = `<div class="phone-app-header"><span class="phone-app-name">🌐 Conecta 9B</span></div>`;
     
+    // Stories Bar
+    h += `<div class="stories-container">
+            <div class="story-item">
+                <div class="story-avatar-ring"><div class="story-avatar-inner">😊</div></div>
+                <span class="story-name">Bia</span>
+            </div>
+            <div class="story-item">
+                <div class="story-avatar-ring"><div class="story-avatar-inner">😎</div></div>
+                <span class="story-name">Lucas</span>
+            </div>
+            <div class="story-item">
+                <div class="story-avatar-ring viewed"><div class="story-avatar-inner">🤡</div></div>
+                <span class="story-name">Pedro</span>
+            </div>
+            <div class="story-item">
+                <div class="story-avatar-ring viewed"><div class="story-avatar-inner">🤷</div></div>
+                <span class="story-name">Fernanda</span>
+            </div>
+          </div>`;
+
     h += `<div class="conecta-post">
             <div class="conecta-header">
                 <div class="conecta-avatar">😎</div>
@@ -1354,18 +1480,28 @@ function renderInvestigationScene(scene) {
         card.innerHTML = `<span class="ev-icon">${item.icon}</span><span class="ev-label">${item.label}</span>`;
         
         card.addEventListener('click', () => {
-            if (!card.classList.contains('found')) {
-                card.classList.add('found');
-                foundItems.push(item.id);
-                showEvidenceToast(item.label);
-                gameState.actionStats.evidenceFound = (gameState.actionStats.evidenceFound||0)+1;
-                
-                card.innerHTML = `
-                    <span class="ev-icon">${item.icon}</span>
-                    <span class="ev-label" style="color:var(--green)">${item.label}</span>
-                    <p style="font-size:11px;color:#D1D5DB;margin-top:6px;line-height:1.4">${item.detail}</p>
-                `;
-                updateInvestigationList(scene.evidenceItems, foundItems);
+            if (!card.classList.contains('found') && !card.classList.contains('false-lead')) {
+                if (item.isFalseLead) {
+                    card.classList.add('false-lead');
+                    card.innerHTML = `
+                        <span class="ev-icon">❌</span>
+                        <span class="ev-label" style="color:var(--red)">PISTA FALSA</span>
+                        <p style="font-size:11px;color:#D1D5DB;margin-top:6px;line-height:1.4">${item.detail}</p>
+                    `;
+                    showStatToast('⚠️ Pista Falsa!', -5);
+                } else {
+                    card.classList.add('found');
+                    foundItems.push(item.id);
+                    showEvidenceToast(item.label);
+                    gameState.actionStats.evidenceFound = (gameState.actionStats.evidenceFound||0)+1;
+                    
+                    card.innerHTML = `
+                        <span class="ev-icon">${item.icon}</span>
+                        <span class="ev-label" style="color:var(--green)">${item.label}</span>
+                        <p style="font-size:11px;color:#D1D5DB;margin-top:6px;line-height:1.4">${item.detail}</p>
+                    `;
+                    updateInvestigationList(scene.evidenceItems, foundItems);
+                }
             }
         });
         board.appendChild(card);
@@ -1394,6 +1530,7 @@ function updateInvestigationList(allItems, foundIds) {
     const el = DOM['evidence-list'];
     if (!el) return;
     el.innerHTML = allItems.map(item => {
+        if (item.isFalseLead) return '';
         const found = foundIds.includes(item.id);
         return `<div class="evidence-list-item ${found?'found':'missing'}"><span>${found?'✓':'○'}</span><span>${item.label}</span></div>`;
     }).join('');
@@ -1502,7 +1639,7 @@ function proceedAfterChoice(choice) {
 }
 
 // ============================================
-// HUB DE INTERVALO
+// HUB DE INTERVALO COM CONVERSAS 1-A-1
 // ============================================
 function showHub() {
     SaveSystem.save();
@@ -1519,21 +1656,152 @@ function showHub() {
         }
     }
 
-    if (DOM['hub-phone-badge']) DOM['hub-phone-badge'].style.display = gameState.evidence.length > 0 ? 'inline-block' : 'none';
+    if (DOM['hub-phone-badge']) DOM['hub-phone-badge'].style.display = 'inline-block';
     showScreen('hub-screen');
+}
+
+let activeHubTab = 'contacts';
+
+function renderHubPhonePanel() {
+    let html = '';
+    
+    if (activeHubTab === 'contacts') {
+        html += '<div style="padding:10px 0;">';
+        
+        // Rafael Chat
+        const rVal = gameState.relationships.rafael;
+        let rStatus = rVal >= 70 ? 'Confia em você' : rVal >= 45 ? 'Pouca conversa' : 'Magoado';
+        html += `<div class="hub-contact-item" data-contact="rafael">
+                    <span class="hub-contact-avatar">😔</span>
+                    <div class="hub-contact-info">
+                        <span class="hub-contact-name">Rafael</span>
+                        <span class="hub-contact-status">${rStatus} (${rVal}%)</span>
+                    </div>
+                    <span class="hub-contact-arrow">💬</span>
+                 </div>`;
+        
+        // Bia Chat
+        const bVal = gameState.relationships.bia;
+        let bStatus = bVal >= 70 ? 'Aliada próxima' : 'Amiga';
+        html += `<div class="hub-contact-item" data-contact="bia">
+                    <span class="hub-contact-avatar">😊</span>
+                    <div class="hub-contact-info">
+                        <span class="hub-contact-name">Bia</span>
+                        <span class="hub-contact-status">${bStatus} (${bVal}%)</span>
+                    </div>
+                    <span class="hub-contact-arrow">💬</span>
+                 </div>`;
+
+        html += '</div>';
+    } else if (activeHubTab === 'conecta') {
+        html = renderPhoneConecta({ phoneType: 'conecta' });
+    } else if (activeHubTab === 'stories') {
+        html = `<div style="padding:16px; text-align:center;">
+                    <h4 style="color:var(--purple); margin-bottom:12px;">📸 Stories do Conecta</h4>
+                    <p style="font-size:13px; color:var(--gray); line-height:1.6;">Stories expirados em 24h. Algumas pessoas da turma postaram indiretas nos momentos mais tensos da semana.</p>
+                </div>`;
+    }
+
+    if (DOM['hub-phone-content']) {
+        DOM['hub-phone-content'].innerHTML = html;
+        
+        DOM['hub-phone-content'].querySelectorAll('.hub-contact-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const contact = item.dataset.contact;
+                open1on1Chat(contact);
+            });
+        });
+    }
+}
+
+function open1on1Chat(charId) {
+    const char = CHARACTERS[charId];
+    if (!char) return;
+
+    if (DOM['hub-chat-title']) DOM['hub-chat-title'].textContent = `💬 ${char.name}`;
+    
+    let chatHtml = '';
+    let replyOptions = [];
+
+    if (charId === 'rafael') {
+        const rVal = gameState.relationships.rafael;
+        if (rVal >= 70) {
+            chatHtml += `<div class="hub-chat-msg"><div class="hub-chat-msg-avatar">😔</div><div class="hub-chat-msg-bubble">Oi ${gameState.playerName}... valeu de verdade por estar do meu lado nessa bagunça toda.</div></div>`;
+            replyOptions = [
+                { text: '"Tamo junto, Rafa. Não liga pra eles."', rel: { rafael: 5 }, id: 'r1' },
+                { text: '"Tô guardando tudo que postarem contra você."', rel: { rafael: 5 }, id: 'r2' }
+            ];
+        } else if (rVal >= 45) {
+            chatHtml += `<div class="hub-chat-msg"><div class="hub-chat-msg-avatar">😔</div><div class="hub-chat-msg-bubble">Oi... as coisas estão estranhas na escola. Mas espero que tudo se resolva logo.</div></div>`;
+            replyOptions = [
+                { text: '"Se precisar conversar, tô por aqui."', rel: { rafael: 10 }, id: 'r3' },
+                { text: '"É, tomara que passe."', rel: { rafael: 0 }, id: 'r4' }
+            ];
+        } else {
+            chatHtml += `<div class="hub-chat-msg"><div class="hub-chat-msg-avatar">😔</div><div class="hub-chat-msg-bubble">Por que você tá me mandando mensagem? Você nem se importa com o que fazem comigo...</div></div>`;
+            replyOptions = [
+                { text: '"Desculpa, Rafa. Eu errei em não ajudar antes."', rel: { rafael: 15 }, id: 'r5' },
+                { text: '"Deixa pra lá então."', rel: { rafael: -5 }, id: 'r6' }
+            ];
+        }
+    } else if (charId === 'bia') {
+        chatHtml += `<div class="hub-chat-msg"><div class="hub-chat-msg-avatar">😊</div><div class="hub-chat-msg-bubble">Oii ${gameState.playerName}! O que tá achando de como as coisas tão indo na turma?</div></div>`;
+        replyOptions = [
+            { text: '"Tô tentando fazer a coisa certa."', rel: { bia: 5 }, id: 'b1' },
+            { text: '"Tá tenso, mas a gente se ajuda!"', rel: { bia: 5 }, id: 'b2' }
+        ];
+    }
+
+    if (DOM['hub-chat-content']) DOM['hub-chat-content'].innerHTML = chatHtml;
+
+    let inputHtml = '<div class="hub-chat-input-title">Sua Resposta:</div>';
+    replyOptions.forEach(opt => {
+        const used = gameState.chatRepliesUsed[opt.id];
+        inputHtml += `<button class="hub-chat-reply-btn ${used ? 'used' : ''}" data-reply-id="${opt.id}">${opt.text}</button>`;
+    });
+
+    if (DOM['hub-chat-input-area']) {
+        DOM['hub-chat-input-area'].innerHTML = inputHtml;
+
+        DOM['hub-chat-input-area'].querySelectorAll('.hub-chat-reply-btn').forEach((btn, idx) => {
+            btn.addEventListener('click', () => {
+                const opt = replyOptions[idx];
+                if (gameState.chatRepliesUsed[opt.id]) return;
+
+                gameState.chatRepliesUsed[opt.id] = true;
+                btn.classList.add('used');
+
+                // Adiciona bolha do jogador
+                const playerBubble = document.createElement('div');
+                playerBubble.className = 'hub-chat-msg own';
+                playerBubble.innerHTML = `<div class="hub-chat-msg-avatar">${gameState.playerAvatar}</div><div class="hub-chat-msg-bubble">${opt.text}</div>`;
+                DOM['hub-chat-content'].appendChild(playerBubble);
+
+                if (opt.rel) applyRelEffects(opt.rel);
+                SynthAudio.playSFX('click');
+            });
+        });
+    }
+
+    if (DOM['hub-chat-panel']) DOM['hub-chat-panel'].style.display = 'flex';
 }
 
 function setupHubEvents() {
     if (DOM['hub-phone-btn']) {
         DOM['hub-phone-btn'].addEventListener('click', () => {
-            let html = '<div class="phone-app-header"><span class="phone-app-name">📱 Dispositivo Integrado</span></div>';
-            html += '<div style="padding:14px 16px"><h4 style="font-size:13px;color:var(--purple);margin-bottom:10px">💬 Caixa de Entrada Recente</h4>';
-            html += '<p style="font-size:13px;color:#9CA3AF;line-height:1.6">Nenhuma nova transmissão ativa. Você pode analisar as mídias salvas nos painéis de evidências.</p></div>';
-            
-            if (DOM['hub-phone-content']) DOM['hub-phone-content'].innerHTML = html;
+            renderHubPhonePanel();
             if (DOM['hub-phone-panel']) DOM['hub-phone-panel'].style.display = 'flex';
         });
     }
+
+    document.querySelectorAll('.hub-phone-tab').forEach(tabBtn => {
+        tabBtn.addEventListener('click', () => {
+            document.querySelectorAll('.hub-phone-tab').forEach(t => t.classList.remove('active'));
+            tabBtn.classList.add('active');
+            activeHubTab = tabBtn.dataset.hubtab;
+            renderHubPhonePanel();
+        });
+    });
 
     if (DOM['hub-evidence-btn']) {
         DOM['hub-evidence-btn'].addEventListener('click', () => {
@@ -1557,21 +1825,21 @@ function setupHubEvents() {
             const chars = [
                 { id: 'rafael', desc: function() {
                     const v = gameState.relationships.rafael;
-                    if (v >= 70) return 'Rafael enxerga você como um abrigo seguro e uma das únicas pessoas justas na turma.';
-                    if (v >= 45) return 'Rafael está receoso devido à pressão da turma, mas respeita sua neutralidade.';
-                    return 'Rafael se sente ameaçado e alienado por suas posturas apáticas ou ativas nas zombarias.';
+                    if (v >= 70) return 'Rafael enxerga você como um abrigo seguro.';
+                    if (v >= 45) return 'Rafael está receoso, mas respeita sua neutralidade.';
+                    return 'Rafael se sente magoado pelas suas atitudes.';
                 }},
                 { id: 'bia', desc: function() {
                     const v = gameState.relationships.bia;
-                    if (v >= 70) return 'Bia tem extrema admiração por suas intervenções e se sente encorajada.';
-                    if (v >= 45) return 'Bia valoriza sua amizade, embora queira ver mais de suas atitudes de liderança.';
-                    return 'Bia está bastante desapontada com sua tolerância com os deboches virtuais.';
+                    if (v >= 70) return 'Bia tem extrema admiração por suas intervenções.';
+                    if (v >= 45) return 'Bia valoriza sua amizade, embora queira mais atitude.';
+                    return 'Bia está decepcionada com sua tolerância ao bullying.';
                 }},
                 { id: 'lucas', desc: function() {
                     const v = gameState.relationships.lucas;
-                    if (v >= 60) return 'Lucas o enxerga como parceiro de zombarias e assume que você concorda com seu bullying.';
-                    if (v >= 35) return 'Lucas está um tanto indiferente às suas posições na turma.';
-                    return 'Lucas se sente desconfortável com suas condutas de barreira e denúncias ativas.';
+                    if (v >= 60) return 'Lucas o enxerga como parceiro de brincadeiras.';
+                    if (v >= 35) return 'Lucas está indiferente com você.';
+                    return 'Lucas se sente desconfortável com suas denúncias.';
                 }}
             ];
             chars.forEach(c => {
@@ -1624,29 +1892,57 @@ function goToChapter(chapterId) {
 }
 
 // ============================================
-// RESULTADO FINAL
+// RESULTADO FINAL — EXPANDIDO PARA 6 FINAIS
 // ============================================
 function getPlayerProfile() {
     const s = gameState, f = s.choiceFlags;
     const profiles = [
-        { id: 'guardian', icon: '🛡️', title: 'Guardião Digital', desc: 'Sua conduta de coleta sistemática de provas e preservação da segurança jurídica e psicológica blindou as vítimas e responsabilizou os detratores.', req: () => s.security >= 70 && !f['ch4_shared_image'] },
-        { id: 'ally', icon: '💜', title: 'Grande Aliado', desc: 'Sua empatia ativa garantiu abrigo social à vítima de forma consistente, impedindo o adoecimento emocional severo do Rafael.', req: () => s.empathy >= 75 && s.relationships.rafael >= 65 },
-        { id: 'investigator', icon: '🔎', title: 'Perito Digital', desc: 'Sua vocação investigativa não permitiu que mentiras e fakes anônimos ficassem ocultos. Você desvendou as trilhas cibernéticas e relatou os fatos de forma íntegra.', req: () => s.evidence.length >= 4 },
-        { id: 'trusted', icon: '🤝', title: 'Pessoa de Confiança', desc: 'Seus pares de confiança e a própria comunidade escolar o enxergam como alguém que toma decisões éticas sob forte pressão de grupo.', req: () => s.trust >= 70 && s.relationships.rafael >= 60 },
-        { id: 'observer', icon: '👀', title: 'Espectador Tolerante', desc: 'Suas condutas focaram mais em assistir de longe a perseguição cibernética do que em quebrar o fluxo abusivo de dados e deboche.', req: () => true }
+        { id: 'hero', icon: '🌟', title: 'Líder Transformador', desc: 'Sua coragem, empatia e proatividade criaram mudanças reais na escola, tornando o ambiente seguro para todos.' },
+        { id: 'guardian', icon: '🛡️', title: 'Guardião Digital', desc: 'Sua conduta de coleta sistemática de provas e denúncias ativas blindou as vítimas e responsabilizou os detratores.' },
+        { id: 'ally', icon: '💜', title: 'Grande Aliado', desc: 'Sua empatia ativa garantiu abrigo social à vítima de forma consistente, impedindo o isolamento emocional severo.' },
+        { id: 'investigator', icon: '🔎', title: 'Perito Digital', desc: 'Sua vocação investigativa não permitiu que mentiras e fakes anônimos ficassem ocultos.' },
+        { id: 'trusted', icon: '🤝', title: 'Pessoa de Confiança', desc: 'Seus pares e a comunidade escolar o enxergam como alguém que toma decisões éticas sob pressão.' },
+        { id: 'observer', icon: '👀', title: 'Espectador Tolerante', desc: 'Suas condutas focaram mais em assistir de longe do que em quebrar o fluxo abusivo de mensagens.' }
     ];
-    return profiles.find(p => p.req()) || profiles[profiles.length-1];
+
+    const avg = (s.security + s.empathy + s.courage + s.trust) / 4;
+    if (avg >= 85) return profiles[0];
+    if (s.security >= 70 && !f['ch4_shared_image']) return profiles[1];
+    if (s.empathy >= 75 && s.relationships.rafael >= 65) return profiles[2];
+    if (s.evidence.length >= 4) return profiles[3];
+    if (s.trust >= 70) return profiles[4];
+    return profiles[5];
 }
 
 function endGame() {
     gameState.hasPlayed = true;
+    gameState.gamesPlayed = (gameState.gamesPlayed || 0) + 1;
+
+    // Lógica expandida de 6 Finais
     const avg = (gameState.security + gameState.empathy + gameState.courage + gameState.trust) / 4;
-    let ending = avg >= 70 ? 'positive' : avg >= 45 ? 'neutral' : 'negative';
+    const f = gameState.choiceFlags;
+
+    let ending = 'neutral';
+    if (f['ch4_shared_image'] || (f['ch1_joined_mockery'] && f['ch3_participated'])) {
+        ending = 'negative'; // Final Cúmplice
+    } else if (avg >= 80 && (f['ch5_spoke_up'] || f['ch5_full_action'])) {
+        ending = 'heroic'; // Final Heroico
+    } else if (gameState.security >= 70 && gameState.actionStats.reports >= 2) {
+        ending = 'guardian'; // Final Guardião Silencioso
+    } else if (gameState.relationships.rafael >= 80) {
+        ending = 'friend'; // Final Amigo Leal
+    } else if (avg >= 50) {
+        ending = 'neutral'; // Final Neutro
+    } else {
+        ending = 'silent'; // Final Espectador Omisso
+    }
+
     gameState.lastEnding = ending;
 
-    if (SaveSystem.load()?.hasPlayed && !gameState.achievements.includes('secondChance')) {
+    if (!gameState.achievements.includes('secondChance') && gameState.gamesPlayed > 1) {
         unlockAchievement('secondChance');
     }
+
     SaveSystem.save();
     showResultScreen(ending);
 }
@@ -1654,14 +1950,21 @@ function endGame() {
 function showResultScreen(ending) {
     showScreen('result-screen');
     const configs = {
-        positive: { emoji:'🌟', title:'VOCÊ FEZ A DIFERENÇA', subtitle:'Sua liderança ética e sensibilidade quebrou o círculo vicioso de abusos online.', cls:'positive',
-            message:'Suas posturas mostraram que o cyberbullying recua quando as testemunhas decidem agir em prol do bem comum. Você acolheu Rafael, documentou as difamações e acionou canais responsáveis. Você é um exemplo de cidadania no ciberespaço.' },
-        neutral: { emoji:'💛', title:'AINDA DÁ TEMPO', subtitle:'Houve boas decisões pontuais, mas você permitiu que a agressão continuasse ativa.', cls:'neutral',
-            message:'Você não impulsionou o ódio, mas permitiu que a omissão distanciasse você da solução ativa. A internet precisa de mais barreira ativa e menos neutralidade estéril. Desafie suas próprias decisões jogando outra vez!' },
+        heroic: { emoji:'🌟', title:'VOCÊ FEZ A DIFERENÇA!', subtitle:'Sua liderança ética e sensibilidade transformaram o ambiente escolar.', cls:'hero',
+            message: () => `Parabéns, ${gameState.playerName}! Suas posturas mostraram que o cyberbullying recua quando as pessoas decidem agir. Você acolheu Rafael, documentou as difamações e liderou mudanças na escola. Você é um exemplo de cidadania digital!` },
+        guardian: { emoji:'🛡️', title:'GUARDIÃO DA SEGURANÇA', subtitle:'Você usou a inteligência e a responsabilidade para proteger quem precisava.', cls:'positive',
+            message: () => `Sua atuação focou na prevenção e na coleta responsável de evidências, ${gameState.playerName}. Graças à sua denúncia e cuidado, a escola pôde tomar providências éticas e legais.` },
+        friend: { emoji:'💜', title:'AMIGO DE VERDADE', subtitle:'Sua empatia garantiu que Rafael não se sentisse sozinho nas horas mais difíceis.', cls:'friend',
+            message: () => `Mais do que denunciar, você esteve presente para quem precisava, ${gameState.playerName}. O apoio emocional que você deu ao Rafael fez toda a diferença na vida dele.` },
+        neutral: { emoji:'💛', title:'AINDA DÁ TEMPO', subtitle:'Houve boas decisões pontuais, mas você permitiu que a agressão continuasse.', cls:'neutral',
+            message: () => `Você não impulsionou o ódio, mas a hesitação em alguns momentos permitiu que a situação se arrastasse, ${gameState.playerName}. A internet precisa de mais barreira ativa. Tente jogar novamente!` },
+        silent: { emoji:'🤐', title:'SILÊNCIO QUE PESA', subtitle:'Ficar em silêncio nem sempre significa ser neutro. O omisso fortalece o agressor.', cls:'silent',
+            message: () => `Seu silêncio permitiu que a perseguição contra Rafael continuasse sem barreiras, ${gameState.playerName}. No mundo real, a falta de ajuda é percebida como apoio ao bullying. Que tal tentar uma nova postura?` },
         negative: { emoji:'⚠️', title:'TUDO SAIU DO CONTROLE', subtitle:'Sua conivência com as zombarias amplificou o dano moral no Rafael.', cls:'negative',
-            message:'Rir de fotos roubadas ou tolerar perfis anônimos gera danos permanentes e irreparáveis na saúde mental de seus pares. O jogo do ódio digital se alimenta do conformismo. Use esta experiência virtual para agir de forma diferente e protetiva no seu dia a dia real.' }
+            message: () => `Encaminhar fotos roubadas ou rir de piadas cruéis causa estragos profundos e duradouros na saúde mental das pessoas. Use esta experiência virtual para agir de forma diferente no seu dia a dia real.` }
     };
-    const c = configs[ending];
+    
+    const c = configs[ending] || configs['neutral'];
 
     if (DOM['result-emoji']) DOM['result-emoji'].textContent = c.emoji;
     if (DOM['result-title']) DOM['result-title'].textContent = c.title;
@@ -1690,12 +1993,12 @@ function showResultScreen(ending) {
             <div class="action-stat-item"><span class="action-stat-value">${as.reports||0}</span><span class="action-stat-label">🚨 Denúncias</span></div>
             <div class="action-stat-item"><span class="action-stat-value">${as.peopleHelped||0}</span><span class="action-stat-label">💜 Acolhimentos</span></div>
             <div class="action-stat-item"><span class="action-stat-value">${gameState.evidence.length||0}</span><span class="action-stat-label">🔎 Evidências Adquiridas</span></div>
-            <div class="action-stat-item"><span class="action-stat-value">${as.contentNotShared||0}</span><span class="action-stat-label">📵 Compartilhamentos Retidos</span></div>`;
+            <div class="action-stat-item"><span class="action-stat-value">${as.contentNotShared||0}</span><span class="action-stat-label">📵 Conteúdo Retido</span></div>`;
     }
 
     if (DOM['result-decisions-list']) {
         DOM['result-decisions-list'].innerHTML = '';
-        const decisions = gameState.choices.filter(c => c.decisionText);
+        const decisions = gameState.choices.filter(ch => ch.decisionText);
         if (decisions.length > 0) {
             decisions.forEach(d => {
                 const li = document.createElement('li'); li.textContent = d.decisionText;
@@ -1721,11 +2024,29 @@ function showResultScreen(ending) {
         }
     }
 
-    if (DOM['result-message']) DOM['result-message'].textContent = c.message;
+    if (DOM['result-message']) DOM['result-message'].textContent = typeof c.message === 'function' ? c.message() : c.message;
+}
+
+function shareResultText() {
+    const prof = getPlayerProfile();
+    const text = `🎮 Joguei "Por Trás da Tela"!
+👤 Jogador: ${gameState.playerName}
+🏆 Perfil: ${prof.title} ${prof.icon}
+🛡️ Segurança: ${gameState.security} | 💜 Empatia: ${gameState.empathy}
+💪 Coragem: ${gameState.courage} | 🤝 Confiança: ${gameState.trust}
+Aprenda sobre empatia e segurança digital também!`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showShareToast();
+        });
+    } else {
+        alert(text);
+    }
 }
 
 // ============================================
-// RESET E NOVO JOGO
+// SETUP DO JOGADOR (PERSONALIZAÇÃO)
 // ============================================
 function resetState() {
     gameState.chapter = 1; gameState.scene = 0;
@@ -1736,26 +2057,46 @@ function resetState() {
     gameState.relationships = { rafael: 50, bia: 60, lucas: 50 };
     gameState.evidence = [];
     gameState.actionStats = { reports:0, peopleHelped:0, evidenceFound:0, contentNotShared:0 };
+    gameState.chatRepliesUsed = {};
+    
     if (DOM['rs-security']) DOM['rs-security'].style.width = '0%';
     if (DOM['rs-empathy']) DOM['rs-empathy'].style.width = '0%';
     if (DOM['rs-courage']) DOM['rs-courage'].style.width = '0%';
     if (DOM['rs-trust']) DOM['rs-trust'].style.width = '0%';
 }
 
+function openPlayerSetup() {
+    showScreen('player-setup-screen');
+}
+
 function startNewGame() {
-    resetState(); updateAllUI(); SaveSystem.save();
+    const inputName = DOM['input-player-name'] ? DOM['input-player-name'].value.trim() : 'Alex';
+    gameState.playerName = inputName || 'Alex';
+    
+    resetState(); 
+    updateAllUI(); 
+    SaveSystem.save();
+    
     const ch = chapters[0];
     if (DOM['transition-chapter-num']) DOM['transition-chapter-num'].textContent = `Capítulo ${ch.id}`;
     if (DOM['transition-title']) DOM['transition-title'].textContent = ch.title;
     if (DOM['transition-desc']) DOM['transition-desc'].textContent = ch.desc;
+    
     showScreen('chapter-transition');
     SynthAudio.startAmbientMusic();
-    setTimeout(() => { showScreen('game-screen'); renderScene(); }, 3000);
+    
+    setTimeout(() => { 
+        showScreen('game-screen'); 
+        renderScene(); 
+    }, 3000);
 }
 
 function continueGame() {
     const saved = SaveSystem.load(); if (!saved) return;
     Object.assign(gameState, {
+        playerName: saved.playerName || 'Alex',
+        playerAvatar: saved.playerAvatar || '🧑',
+        playerPronoun: saved.playerPronoun || 'neutro',
         chapter: saved.chapter, scene: saved.scene,
         security: saved.security, empathy: saved.empathy,
         courage: saved.courage, trust: saved.trust,
@@ -1764,9 +2105,14 @@ function continueGame() {
         relationships: saved.relationships||{rafael:50,bia:60,lucas:50},
         evidence: saved.evidence||[],
         actionStats: saved.actionStats||{reports:0,peopleHelped:0,evidenceFound:0,contentNotShared:0},
-        hasPlayed: saved.hasPlayed||false, lastEnding: saved.lastEnding||null
+        gamesPlayed: saved.gamesPlayed||0,
+        hasPlayed: saved.hasPlayed||false, lastEnding: saved.lastEnding||null,
+        chatRepliesUsed: saved.chatRepliesUsed||{}
     });
-    updateAllUI(); showScreen('game-screen'); renderScene();
+    
+    updateAllUI(); 
+    showScreen('game-screen'); 
+    renderScene();
     SynthAudio.startAmbientMusic();
 }
 
@@ -1780,8 +2126,14 @@ function renderAchievementsScreen() {
     Object.values(ACHIEVEMENTS).forEach(a => {
         const unlocked = gameState.achievements.includes(a.id);
         const div = document.createElement('div');
-        div.className = `ach-grid-item ${unlocked ? 'unlocked' : 'locked'}`;
-        div.innerHTML = `<span class="ach-g-icon">${a.icon}</span><span class="ach-g-name">${a.name}</span><span class="ach-g-desc">${a.desc}</span>`;
+        const secretClass = a.secret ? ' secret' : '';
+        div.className = `ach-grid-item ${unlocked ? 'unlocked' : 'locked'}${secretClass}`;
+        
+        if (a.secret && !unlocked) {
+            div.innerHTML = `<span class="ach-g-icon">❓</span><span class="ach-g-name">Conquista Secreta</span><span class="ach-g-desc">Jogue para descobrir como desbloquear.</span>`;
+        } else {
+            div.innerHTML = `<span class="ach-g-icon">${a.icon}</span><span class="ach-g-name">${a.name}</span><span class="ach-g-desc">${a.desc}</span>`;
+        }
         grid.appendChild(div);
     });
 }
@@ -1789,6 +2141,7 @@ function renderAchievementsScreen() {
 function applySettings() {
     if (DOM['toggle-music']) DOM['toggle-music'].checked = settings.music;
     if (DOM['toggle-sfx']) DOM['toggle-sfx'].checked = settings.sfx;
+    if (DOM['volume-slider']) DOM['volume-slider'].value = settings.volume || 50;
     if (DOM['toggle-animations']) DOM['toggle-animations'].checked = settings.animations;
     if (DOM['text-speed']) DOM['text-speed'].value = settings.textSpeed || 'normal';
     document.body.classList.toggle('no-animations', !settings.animations);
@@ -1831,7 +2184,6 @@ function runLoading() {
 // REGISTRO DE EVENTOS
 // ============================================
 function setupEvents() {
-    // Libera a Web Audio API no primeiro clique do usuário
     document.addEventListener('click', () => {
         SynthAudio.init();
     }, { once: true });
@@ -1839,11 +2191,39 @@ function setupEvents() {
     if (DOM['btn-new-game']) {
         DOM['btn-new-game'].addEventListener('click', () => {
             if (SaveSystem.hasSave()) {
-                showConfirm('Novo Jogo', 'Deseja iniciar nova rodada? O progresso existente no rolo de salvamento será excluído de forma irreversível.', () => { SaveSystem.clear(); startNewGame(); });
-            } else startNewGame();
+                showConfirm('Novo Jogo', 'Deseja iniciar nova rodada? O progresso existente no rolo de salvamento será excluído de forma irreversível.', () => { 
+                    SaveSystem.clear(); 
+                    openPlayerSetup(); 
+                });
+            } else {
+                openPlayerSetup();
+            }
         });
     }
-    
+
+    if (DOM['btn-setup-back']) DOM['btn-setup-back'].addEventListener('click', () => showScreen('menu-screen'));
+    if (DOM['btn-start-game']) DOM['btn-start-game'].addEventListener('click', startNewGame);
+
+    // Grid de Avatares no Setup
+    if (DOM['avatar-grid']) {
+        DOM['avatar-grid'].querySelectorAll('.avatar-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                DOM['avatar-grid'].querySelectorAll('.avatar-option').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                gameState.playerAvatar = btn.dataset.avatar;
+            });
+        });
+    }
+
+    // Pronomes no Setup
+    document.querySelectorAll('.pronoun-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.pronoun-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            gameState.playerPronoun = btn.dataset.pronoun;
+        });
+    });
+
     if (DOM['btn-continue']) DOM['btn-continue'].addEventListener('click', continueGame);
     
     if (DOM['btn-achievements-menu']) {
@@ -1852,11 +2232,16 @@ function setupEvents() {
             showScreen('achievements-screen'); 
         });
     }
+
+    if (DOM['btn-learn-more']) {
+        DOM['btn-learn-more'].addEventListener('click', () => showScreen('learn-screen'));
+    }
     
     if (DOM['btn-settings']) DOM['btn-settings'].addEventListener('click', () => showScreen('settings-screen'));
     if (DOM['btn-about']) DOM['btn-about'].addEventListener('click', () => showScreen('about-screen'));
 
     if (DOM['btn-settings-back']) DOM['btn-settings-back'].addEventListener('click', () => showScreen('menu-screen'));
+    if (DOM['btn-learn-back']) DOM['btn-learn-back'].addEventListener('click', () => showScreen('menu-screen'));
     
     if (DOM['toggle-music']) {
         DOM['toggle-music'].addEventListener('change', () => { 
@@ -1871,6 +2256,13 @@ function setupEvents() {
         DOM['toggle-sfx'].addEventListener('change', () => { 
             settings.sfx = DOM['toggle-sfx'].checked; 
             SaveSystem.saveSettings(); 
+        });
+    }
+
+    if (DOM['volume-slider']) {
+        DOM['volume-slider'].addEventListener('input', () => {
+            settings.volume = parseInt(DOM['volume-slider'].value);
+            SaveSystem.saveSettings();
         });
     }
     
@@ -1892,7 +2284,9 @@ function setupEvents() {
     if (DOM['btn-clear-data']) {
         DOM['btn-clear-data'].addEventListener('click', () => {
             showConfirm('Apagar Dados do Jogo', 'Limpar todo o histórico de medalhas e salvamentos da memória local do seu navegador?', () => {
-                SaveSystem.clear(); if (DOM['btn-continue']) DOM['btn-continue'].disabled = true; showScreen('settings-screen');
+                SaveSystem.clear(); 
+                if (DOM['btn-continue']) DOM['btn-continue'].disabled = true; 
+                showScreen('settings-screen');
             });
         });
     }
@@ -1923,7 +2317,8 @@ function setupEvents() {
 
     if (DOM['btn-close-tip']) DOM['btn-close-tip'].addEventListener('click', closeTip);
 
-    if (DOM['btn-play-again']) DOM['btn-play-again'].addEventListener('click', () => { SaveSystem.clear(); startNewGame(); });
+    if (DOM['btn-play-again']) DOM['btn-play-again'].addEventListener('click', () => { SaveSystem.clear(); openPlayerSetup(); });
+    if (DOM['btn-share-result']) DOM['btn-share-result'].addEventListener('click', shareResultText);
     if (DOM['btn-result-menu']) DOM['btn-result-menu'].addEventListener('click', () => { showScreen('menu-screen'); if (DOM['btn-continue']) DOM['btn-continue'].disabled = !SaveSystem.hasSave(); });
 
     const tabs = ['messages', 'conecta', 'notifications', 'evidence'];
@@ -1944,8 +2339,12 @@ function setupEvents() {
 
     document.addEventListener('keydown', e => {
         const isGameActive = DOM['game-screen'] && DOM['game-screen'].classList.contains('active');
-        const isHubActive = DOM['hub-screen'] && DOM['hub-screen'].classList.contains('active');
-        if (!isGameActive && !isHubActive) return;
+        if (!isGameActive) return;
+
+        // Se a tela de reflexão estiver aberta, bloqueia respostas normais 1-4
+        if (DOM['reflection-container'] && DOM['reflection-container'].style.display === 'flex') {
+            return;
+        }
         
         const map = {'1':0,'2':1,'3':2,'4':3,'a':0,'b':1,'c':2,'d':3};
         const k = e.key.toLowerCase();
@@ -1974,7 +2373,10 @@ function init() {
     if (DOM['btn-continue']) DOM['btn-continue'].disabled = !SaveSystem.hasSave();
     
     const saved = SaveSystem.load();
-    if (saved && saved.achievements) gameState.achievements = saved.achievements;
+    if (saved) {
+        if (saved.achievements) gameState.achievements = saved.achievements;
+        if (saved.gamesPlayed) gameState.gamesPlayed = saved.gamesPlayed;
+    }
     
     setupEvents();
     runLoading();
