@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Por Trás da Tela</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Jogo interativo sobre cyberbullying, empatia e segurança digital">
+</head>
+<body>
+    <!-- TELA DE LOADING -->
+    <div id="loading-screen" class="screen active">
+        <div class="loading-content">
+            <div class="loading-icon">
+                <div class="pulse-ring"></div>
+                <span class="loading-emoji">🖥️</span>
+            </div>
+            <h1 class="loading-title">POR TRÁS DA TELA</h1>
+            <div class="loading-bar-container">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+            <p class="loading-text" id="loading-text">Carregando...</p>
+        </div>
+    </div>
+
+    <!-- TELA INICIAL -->
+    <div id="menu-screen" class="screen">
+        <div class="menu-bg-effects">
+            <div class="floating-element fe1">💬</div>
+            <div class="floating-element fe2">📱</div>
+            <div class="floating-element fe3">🔒</div>
+            <div class="floating-element fe4">👁️</div>
+            <div class="floating-element fe5">🛡️</div>
+            <div class="floating-element fe6">💜</div>
+            <div class="grid-overlay"></div>
+        </div>
+        <div class="menu-content">
+            <div class="menu-logo">
+                <div class="logo-glitch" data-text="POR TRÁS DA TELA">POR TRÁS DA TELA</div>
+                <p class="menu-subtitle">"Na internet, uma escolha pode mudar a história de alguém."</p>
+            </div>
+            <nav class="menu-buttons" role="navigation" aria-label="Menu principal">
+                <button class="menu-btn primary-btn" id="btn-new-game" aria-label="Novo Jogo">
+                    <span class="btn-icon">▶</span>
+                    <span class="btn-text">NOVO JOGO</span>
+                </button>
+                <button class="menu-btn" id="btn-continue" aria-label="Continuar jogo salvo" disabled>
+                    <span class="btn-icon">📖</span>
+                    <span class="btn-text">CONTINUAR</span>
+                </button>
+                <button class="menu-btn" id="btn-settings" aria-label="Configurações">
+                    <span class="btn-icon">⚙</span>
+                    <span class="btn-text">CONFIGURAÇÕES</span>
+                </button>
+                <button class="menu-btn" id="btn-about" aria-label="Sobre o jogo">
+                    <span class="btn-icon">ℹ️</span>
+                    <span class="btn-text">SOBRE O JOGO</span>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- TELA DE CONFIGURAÇÕES -->
+    <div id="settings-screen" class="screen">
+        <div class="panel-container">
+            <div class="panel-header">
+                <button class="back-btn" id="btn-settings-back" aria-label="Voltar">←</button>
+                <h2>⚙ CONFIGURAÇÕES</h2>
+            </div>
+            <div class="panel-body">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-icon">🔊</span>
+                        <span class="setting-label">Música</span>
+                    </div>
+                    <label class="toggle-switch" aria-label="Ativar ou desativar música">
+                        <input type="checkbox" id="toggle-music" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-icon">🔔</span>
+                        <span class="setting-label">Efeitos Sonoros</span>
+                    </div>
+                    <label class="toggle-switch" aria-label="Ativar ou desativar efeitos sonoros">
+                        <input type="checkbox" id="toggle-sfx" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-icon">✨</span>
+                        <span class="setting-label">Animações</span>
+                    </div>
+                    <label class="toggle-switch" aria-label="Ativar ou desativar animações">
+                        <input type="checkbox" id="toggle-animations" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item danger">
+                    <button class="danger-btn" id="btn-clear-data" aria-label="Apagar todo o progresso">
+                        <span>🗑️</span>
+                        <span>Apagar Progresso</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA SOBRE -->
+    <div id="about-screen" class="screen">
+        <div class="panel-container">
+            <div class="panel-header">
+                <button class="back-btn" id="btn-about-back" aria-label="Voltar">←</button>
+                <h2>ℹ️ SOBRE O JOGO</h2>
+            </div>
+            <div class="panel-body about-body">
+                <div class="about-section">
+                    <h3>🎮 O que é "Por Trás da Tela"?</h3>
+                    <p>É um jogo interativo educacional sobre cyberbullying, empatia e segurança digital. Você acompanha personagens adolescentes e toma decisões que afetam suas vidas.</p>
+                </div>
+                <div class="about-section">
+                    <h3>🎯 Objetivo</h3>
+                    <p>Perceber que suas escolhas na internet têm consequências reais. Aprender a identificar cyberbullying, apoiar vítimas e buscar ajuda de forma segura.</p>
+                </div>
+                <div class="about-section">
+                    <h3>⚠️ Aviso Importante</h3>
+                    <p>Todas as situações, personagens e cenários deste jogo são <strong>fictícios</strong>. Nenhum nome, foto ou informação real de pessoas foi utilizado.</p>
+                </div>
+                <div class="about-section">
+                    <h3>🔒 Privacidade</h3>
+                    <p>Este jogo não coleta nenhuma informação pessoal. Seu progresso é salvo apenas no seu navegador (localStorage) e não é enviado a nenhum servidor.</p>
+                </div>
+                <div class="about-section">
+                    <h3>📞 Se você está passando por uma situação de cyberbullying</h3>
+                    <p>Procure ajuda! Converse com um adulto de confiança, um professor, ou ligue para o <strong>Disque 100</strong> (Direitos Humanos) ou <strong>CVV 188</strong> (Centro de Valorização da Vida).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA DO JOGO -->
+    <div id="game-screen" class="screen">
+        <!-- Header do jogo -->
+        <header class="game-header" role="banner">
+            <div class="header-left">
+                <button class="icon-btn" id="btn-game-menu" aria-label="Menu do jogo">☰</button>
+                <div class="chapter-indicator" id="chapter-indicator">
+                    <span class="chapter-label">Capítulo 1</span>
+                    <span class="chapter-title" id="chapter-title-header">A Primeira Mensagem</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="mini-stats" id="mini-stats" aria-label="Seus atributos">
+                    <span class="mini-stat" title="Segurança" aria-label="Segurança">🛡️<span id="ms-security">50</span></span>
+                    <span class="mini-stat" title="Empatia" aria-label="Empatia">💜<span id="ms-empathy">50</span></span>
+                    <span class="mini-stat" title="Coragem" aria-label="Coragem">💪<span id="ms-courage">50</span></span>
+                    <span class="mini-stat" title="Confiança" aria-label="Confiança">🤝<span id="ms-trust">50</span></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Área principal do jogo -->
+        <main class="game-main" role="main">
+            <!-- Narrativa normal -->
+            <div class="narrative-container" id="narrative-container">
+                <div class="scene-image-container" id="scene-image-container">
+                    <div class="scene-visual" id="scene-visual"></div>
+                </div>
+                <div class="dialogue-box" id="dialogue-box">
+                    <div class="speaker-name" id="speaker-name"></div>
+                    <div class="dialogue-text" id="dialogue-text"></div>
+                </div>
+                <div class="choices-container" id="choices-container" role="group" aria-label="Escolhas disponíveis"></div>
+            </div>
+
+            <!-- Interface de celular virtual -->
+            <div class="phone-container" id="phone-container" style="display:none;">
+                <div class="phone-frame">
+                    <div class="phone-notch"></div>
+                    <div class="phone-status-bar">
+                        <span class="phone-time" id="phone-time">14:32</span>
+                        <div class="phone-icons">
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="phone-screen" id="phone-screen">
+                        <!-- Conteúdo dinâmico do celular -->
+                    </div>
+                    <div class="phone-home-bar"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Menu lateral do jogo -->
+        <div class="game-sidebar" id="game-sidebar">
+            <div class="sidebar-overlay" id="sidebar-overlay"></div>
+            <div class="sidebar-content">
+                <div class="sidebar-header">
+                    <h3>MENU</h3>
+                    <button class="icon-btn" id="btn-close-sidebar" aria-label="Fechar menu">✕</button>
+                </div>
+                <div class="sidebar-stats">
+                    <h4>Seus Atributos</h4>
+                    <div class="stat-bar-full">
+                        <div class="stat-label">🛡️ Segurança</div>
+                        <div class="stat-track"><div class="stat-fill security" id="sf-security" style="width:50%"></div></div>
+                        <div class="stat-value" id="sv-security">50</div>
+                    </div>
+                    <div class="stat-bar-full">
+                        <div class="stat-label">💜 Empatia</div>
+                        <div class="stat-track"><div class="stat-fill empathy" id="sf-empathy" style="width:50%"></div></div>
+                        <div class="stat-value" id="sv-empathy">50</div>
+                    </div>
+                    <div class="stat-bar-full">
+                        <div class="stat-label">💪 Coragem</div>
+                        <div class="stat-track"><div class="stat-fill courage" id="sf-courage" style="width:50%"></div></div>
+                        <div class="stat-value" id="sv-courage">50</div>
+                    </div>
+                    <div class="stat-bar-full">
+                        <div class="stat-label">🤝 Confiança</div>
+                        <div class="stat-track"><div class="stat-fill trust" id="sf-trust" style="width:50%"></div></div>
+                        <div class="stat-value" id="sv-trust">50</div>
+                    </div>
+                </div>
+                <div class="sidebar-achievements">
+                    <h4>Conquistas</h4>
+                    <div class="achievements-list" id="sidebar-achievements-list">
+                        <p class="no-achievements">Nenhuma conquista ainda.</p>
+                    </div>
+                </div>
+                <div class="sidebar-actions">
+                    <button class="sidebar-btn" id="btn-save-game">💾 Salvar Jogo</button>
+                    <button class="sidebar-btn" id="btn-back-menu">🏠 Menu Principal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA DE TRANSIÇÃO DE CAPÍTULO -->
+    <div id="chapter-transition" class="screen">
+        <div class="transition-content">
+            <div class="transition-chapter-num" id="transition-chapter-num">Capítulo 1</div>
+            <h2 class="transition-title" id="transition-title">A Primeira Mensagem</h2>
+            <div class="transition-line"></div>
+            <p class="transition-desc" id="transition-desc"></p>
+        </div>
+    </div>
+
+    <!-- TELA DE TIP (DICA EDUCACIONAL) -->
+    <div id="tip-overlay" class="overlay" style="display:none;">
+        <div class="tip-card">
+            <div class="tip-icon">💡</div>
+            <h3 class="tip-title">DICA</h3>
+            <p class="tip-text" id="tip-text"></p>
+            <button class="tip-btn" id="btn-close-tip">Entendi</button>
+        </div>
+    </div>
+
+    <!-- TELA DE CONQUISTA -->
+    <div id="achievement-toast" class="achievement-toast" style="display:none;">
+        <div class="achievement-icon" id="ach-toast-icon">🏅</div>
+        <div class="achievement-info">
+            <span class="achievement-label">CONQUISTA DESBLOQUEADA!</span>
+            <span class="achievement-name" id="ach-toast-name"></span>
+        </div>
+    </div>
+
+    <!-- TELA DE RESULTADO FINAL -->
+    <div id="result-screen" class="screen">
+        <div class="result-container">
+            <div class="result-header" id="result-header">
+                <div class="result-emoji" id="result-emoji">🌟</div>
+                <h2 class="result-title" id="result-title">SEU RESULTADO</h2>
+                <p class="result-subtitle" id="result-subtitle"></p>
+            </div>
+            <div class="result-stats" id="result-stats">
+                <div class="result-stat">
+                    <span class="rs-label">🛡️ Segurança</span>
+                    <div class="rs-track"><div class="rs-fill security" id="rs-security"></div></div>
+                    <span class="rs-value" id="rsv-security">0</span>
+                </div>
+                <div class="result-stat">
+                    <span class="rs-label">💜 Empatia</span>
+                    <div class="rs-track"><div class="rs-fill empathy" id="rs-empathy"></div></div>
+                    <span class="rs-value" id="rsv-empathy">0</span>
+                </div>
+                <div class="result-stat">
+                    <span class="rs-label">💪 Coragem</span>
+                    <div class="rs-track"><div class="rs-fill courage" id="rs-courage"></div></div>
+                    <span class="rs-value" id="rsv-courage">0</span>
+                </div>
+                <div class="result-stat">
+                    <span class="rs-label">🤝 Confiança</span>
+                    <div class="rs-track"><div class="rs-fill trust" id="rs-trust"></div></div>
+                    <span class="rs-value" id="rsv-trust">0</span>
+                </div>
+            </div>
+            <div class="result-decisions" id="result-decisions">
+                <h3>📋 Suas Principais Decisões</h3>
+                <ul id="result-decisions-list"></ul>
+            </div>
+            <div class="result-achievements" id="result-achievements">
+                <h3>🏅 Conquistas</h3>
+                <div id="result-achievements-list"></div>
+            </div>
+            <div class="result-message" id="result-message"></div>
+            <div class="result-actions">
+                <button class="menu-btn primary-btn" id="btn-play-again">
+                    <span class="btn-icon">🔄</span>
+                    <span class="btn-text">JOGAR NOVAMENTE</span>
+                </button>
+                <button class="menu-btn" id="btn-result-menu">
+                    <span class="btn-icon">🏠</span>
+                    <span class="btn-text">MENU PRINCIPAL</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMAÇÃO -->
+    <div id="confirm-modal" class="overlay" style="display:none;">
+        <div class="confirm-card">
+            <h3 id="confirm-title">Tem certeza?</h3>
+            <p id="confirm-text"></p>
+            <div class="confirm-actions">
+                <button class="confirm-btn cancel" id="confirm-cancel">Cancelar</button>
+                <button class="confirm-btn accept" id="confirm-accept">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
