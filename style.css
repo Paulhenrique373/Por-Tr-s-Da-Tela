@@ -133,6 +133,13 @@
    .learn-list li::before{content:'▸';position:absolute;left:0;color:var(--purple);font-weight:bold}
    .glossary-item{background:var(--bg);border:1px solid var(--gray-darker);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:8px;font-size:13px;color:#D1D5DB}
    .glossary-item strong{color:var(--cyan);margin-right:6px}
+   .help-link{color:var(--cyan);text-decoration:underline;text-underline-offset:2px}
+   .help-link:hover{color:var(--purple)}
+   .kit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:8px}
+   .kit-card{background:var(--bg);border:1px solid var(--gray-darker);border-radius:var(--r);padding:14px;font-size:12.5px;color:#D1D5DB;line-height:1.5}
+   .kit-card .kit-icon{font-size:20px;display:block;margin-bottom:6px}
+   .kit-card strong{display:block;color:var(--white);font-size:13px;margin-bottom:6px}
+   .kit-card p{margin:0;color:#9CA3AF}
    
    /* CONQUISTAS */
    .achievements-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}

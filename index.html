@@ -54,6 +54,12 @@
                 <button class="menu-btn" id="btn-achievements-menu">
                     <span class="btn-icon">🏆</span><span class="btn-text">CONQUISTAS</span>
                 </button>
+                <button class="menu-btn" id="btn-progress-menu">
+                    <span class="btn-icon">📊</span><span class="btn-text">MEU PROGRESSO</span>
+                </button>
+                <button class="menu-btn" id="btn-endings-menu">
+                    <span class="btn-icon">🎭</span><span class="btn-text">GALERIA DE FINAIS</span>
+                </button>
                 <button class="menu-btn" id="btn-learn-more">
                     <span class="btn-icon">📚</span><span class="btn-text">APRENDA MAIS</span>
                 </button>
@@ -162,7 +168,7 @@
                 <div class="about-section"><h3>🎮 O que é?</h3><p>Experiência narrativa focada em escolhas e consequências reais sobre o impacto digital de nossas ações.</p></div>
                 <div class="about-section"><h3>🎯 Educação</h3><p>Foco em desenvolver empatia, discernimento de privacidade e noções sobre legislação digital.</p></div>
                 <div class="about-section"><h3>⚠️ Ficção</h3><p>Todos os nomes e situações são fictícios, criados para simulação pedagógica.</p></div>
-                <div class="about-section"><h3>📞 Apoio</h3><p>Em situações reais: <strong>Disque 100</strong> ou <strong>CVV: 188</strong>.</p></div>
+                <div class="about-section"><h3>📞 Apoio</h3><p>Em situações reais: <a href="tel:100" class="help-link" data-help-channel="disque100"><strong>Disque 100</strong></a> ou <a href="tel:188" class="help-link" data-help-channel="cvv"><strong>CVV: 188</strong></a>.</p></div>
             </div>
         </div>
     </div>
@@ -176,7 +182,17 @@
             </div>
             <div class="panel-body">
                 <div class="learn-section"><h3>⚖️ O que diz a lei?</h3><p>A <strong>Lei 13.185/2015</strong> combate o bullying (inclusive digital). Vazar imagens íntimas é crime pela <strong>Lei 13.718/2018</strong>. Menores respondem por seus atos.</p></div>
-                <div class="learn-section"><h3>🚨 Como denunciar?</h3><ul class="learn-list"><li><strong>Disque 100</strong> — Direitos Humanos</li><li><strong>CVV: 188</strong> — Apoio emocional 24h</li><li><strong>SaferNet:</strong> new.safernet.org.br/denuncie</li><li><strong>Conselho Tutelar</strong> local</li></ul></div>
+                <div class="learn-section"><h3>🚨 Como denunciar?</h3><ul class="learn-list"><li><a href="tel:100" class="help-link" data-help-channel="disque100"><strong>Disque 100</strong></a> — Direitos Humanos</li><li><a href="tel:188" class="help-link" data-help-channel="cvv"><strong>CVV: 188</strong></a> — Apoio emocional 24h</li><li><a href="https://new.safernet.org.br/denuncie" target="_blank" rel="noopener" class="help-link" data-help-channel="safernet"><strong>SaferNet</strong> — new.safernet.org.br/denuncie</a></li><li><strong>Conselho Tutelar</strong> local</li></ul></div>
+                <div class="learn-section"><h3>🛟 Kit rápido: o que fazer se...</h3>
+                    <div class="kit-grid" id="kit-grid">
+                        <div class="kit-card"><span class="kit-icon">👤</span><strong>Criaram um perfil falso sobre mim</strong><p>Não interaja com o perfil. Tire prints da bio, posts e seguidores antes de denunciar dentro da rede social e, se possível, para um adulto de confiança.</p></div>
+                        <div class="kit-card"><span class="kit-icon">📸</span><strong>Divulgaram uma foto minha</strong><p>Não apague as provas: salve prints com data e hora. Denuncie na plataforma e, se for imagem íntima, isso é crime (Lei 13.718/2018) — procure um adulto e o Conselho Tutelar.</p></div>
+                        <div class="kit-card"><span class="kit-icon">💬</span><strong>Recebo mensagens ofensivas</strong><p>Não responda no calor do momento. Salve os prints, bloqueie quem enviou e denuncie ao responsável (escola, plataforma ou Disque 100).</p></div>
+                        <div class="kit-card"><span class="kit-icon">🚪</span><strong>Estou sendo excluído de grupos</strong><p>Converse com alguém de confiança sobre como isso te faz sentir. Exclusão social também é uma forma de cyberbullying, mesmo sem ofensa direta.</p></div>
+                        <div class="kit-card"><span class="kit-icon">⚠️</span><strong>Estou sendo ameaçado</strong><p>Ameaças são crime. Guarde as provas e procure imediatamente um adulto responsável, a escola e, se necessário, a polícia.</p></div>
+                        <div class="kit-card"><span class="kit-icon">🤝</span><strong>Um amigo está sofrendo isso</strong><p>Ouça sem julgar, ajude a guardar provas e incentive a buscar ajuda — sozinho, denunciar às vezes parece impossível.</p></div>
+                    </div>
+                </div>
                 <div class="learn-section"><h3>💡 Sinais de vítima</h3><ul class="learn-list"><li>Isolamento e mudança de humor</li><li>Medo ao usar dispositivos</li><li>Queda no desempenho escolar</li><li>Alterações no sono</li></ul></div>
                 <div class="learn-section"><h3>🛡️ Proteção</h3><ul class="learn-list"><li>Configure privacidade nas redes</li><li>Nunca envie fotos íntimas</li><li>Bloqueie e denuncie agressores</li><li>Guarde prints antes de bloquear</li></ul></div>
                 <div class="learn-section"><h3>🤝 Como ajudar</h3><ul class="learn-list"><li>Ouça sem julgar</li><li>Valide os sentimentos</li><li>Ajude a coletar evidências</li><li>Incentive busca por ajuda profissional</li></ul></div>
@@ -200,6 +216,50 @@
             </div>
             <div class="panel-body">
                 <div class="achievements-grid" id="achievements-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEU PROGRESSO -->
+    <div id="progress-screen" class="screen">
+        <div class="panel-container panel-wide">
+            <div class="panel-header">
+                <button class="back-btn" id="btn-progress-back">←</button>
+                <h2>📊 MEU PROGRESSO</h2>
+            </div>
+            <div class="panel-body">
+                <div class="setup-section">
+                    <p class="progress-empty" id="progress-empty" style="display:none;color:#9CA3AF;font-size:14px;text-align:center;padding:20px 0">Comece uma partida para ver seu progresso aqui.</p>
+                    <div id="progress-content">
+                        <h4 style="color:var(--purple);margin-bottom:10px">Atributos</h4>
+                        <div class="stat-bar-full"><div class="stat-label">🛡️ Segurança</div><div class="stat-track"><div class="stat-fill security" id="pg-security"></div></div><div class="stat-value" id="pgv-security">0</div></div>
+                        <div class="stat-bar-full"><div class="stat-label">💜 Empatia</div><div class="stat-track"><div class="stat-fill empathy" id="pg-empathy"></div></div><div class="stat-value" id="pgv-empathy">0</div></div>
+                        <div class="stat-bar-full"><div class="stat-label">💪 Coragem</div><div class="stat-track"><div class="stat-fill courage" id="pg-courage"></div></div><div class="stat-value" id="pgv-courage">0</div></div>
+                        <div class="stat-bar-full"><div class="stat-label">🤝 Confiança</div><div class="stat-track"><div class="stat-fill trust" id="pg-trust"></div></div><div class="stat-value" id="pgv-trust">0</div></div>
+                        <h4 style="color:var(--purple);margin:20px 0 10px">Relacionamentos</h4>
+                        <div class="relationships-list">
+                            <div class="rel-item"><span class="rel-avatar">😔</span><div class="rel-info"><span class="rel-name">Rafael</span><div class="rel-track"><div class="rel-fill rafael" id="pgrel-rafael"></div></div></div><span class="rel-val" id="pgrelv-rafael">0</span></div>
+                            <div class="rel-item"><span class="rel-avatar">😊</span><div class="rel-info"><span class="rel-name">Bia</span><div class="rel-track"><div class="rel-fill bia" id="pgrel-bia"></div></div></div><span class="rel-val" id="pgrelv-bia">0</span></div>
+                            <div class="rel-item"><span class="rel-avatar">😎</span><div class="rel-info"><span class="rel-name">Lucas</span><div class="rel-track"><div class="rel-fill lucas" id="pgrel-lucas"></div></div></div><span class="rel-val" id="pgrelv-lucas">0</span></div>
+                        </div>
+                        <h4 style="color:var(--purple);margin:20px 0 10px">Estatísticas gerais</h4>
+                        <div class="action-stats-grid" id="progress-action-stats"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GALERIA DE FINAIS -->
+    <div id="endings-screen" class="screen">
+        <div class="panel-container panel-wide">
+            <div class="panel-header">
+                <button class="back-btn" id="btn-endings-back">←</button>
+                <h2>🎭 GALERIA DE FINAIS</h2>
+            </div>
+            <div class="panel-body">
+                <p class="progress-empty" id="endings-progress-label" style="color:var(--purple);font-size:13px;margin-bottom:14px"></p>
+                <div class="achievements-grid" id="endings-grid"></div>
             </div>
         </div>
     </div>
@@ -291,14 +351,6 @@
                 </div>
             </div>
 
-            <!-- NOVO: Modal para Postar no Conecta -->
-            <div id="post-modal" class="overlay" style="display:none;">
-                <div class="post-modal-card">
-                    <h3>📝 Fazer uma publicação no Conecta</h3>
-                    <p class="post-modal-desc">Escolha uma mensagem para publicar na sua timeline pública:</p>
-                    <div class="post-options" id="post-options"></div>
-                </div>
-            </div>
         </main>
 
         <div class="game-sidebar" id="game-sidebar">
@@ -421,6 +473,16 @@
                 <button class="icon-btn hub-panel-close" data-close="hub-relationships-panel">✕</button>
             </div>
             <div class="hub-panel-body" id="hub-relationships-content"></div>
+        </div>
+    </div>
+
+    <!-- Modal para Postar no Conecta (v2.0) -->
+    <div id="post-modal" class="overlay" style="display:none;">
+        <div class="post-modal-card">
+            <h3>📝 Fazer uma publicação no Conecta</h3>
+            <p class="post-modal-desc">Escolha uma mensagem para publicar na sua timeline pública:</p>
+            <div class="post-options" id="post-options"></div>
+            <button class="tip-btn" id="btn-close-post-modal" style="margin-top:14px;width:100%">Cancelar</button>
         </div>
     </div>
 

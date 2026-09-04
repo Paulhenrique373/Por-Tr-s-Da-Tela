@@ -125,7 +125,9 @@ const gameState = {
     gamesPlayed: 0,
     hasPlayed: false,
     lastEnding: null,
-    chatRepliesUsed: {}
+    chatRepliesUsed: {},
+    endingsUnlocked: [],
+    postsMade: {}
 };
 
 // ============================================
@@ -272,7 +274,12 @@ const ACHIEVEMENTS = {
     // Conquistas Secretas
     detetivePerfeito: { id: 'detetivePerfeito', icon: '🕵️‍♂️', name: 'Detetive Perfeito', desc: 'Encontrou todas as pistas sem cair em nenhuma pista falsa.', secret: true },
     influenciadorPositivo: { id: 'influenciadorPositivo', icon: '⭐', name: 'Influenciador Positivo', desc: 'Alcançou 100 de empatia e confiança na mesma partida.', secret: true },
-    diplomata: { id: 'diplomata', icon: '🕊️', name: 'Diplomata Digital', desc: 'Manteve relacionamentos altos com Rafael, Bia E Lucas.', secret: true }
+    diplomata: { id: 'diplomata', icon: '🕊️', name: 'Diplomata Digital', desc: 'Manteve relacionamentos altos com Rafael, Bia E Lucas.', secret: true },
+    // Novas conquistas v2.0
+    firstStep: { id: 'firstStep', icon: '🥇', name: 'Primeiro Passo', desc: 'Completou o primeiro capítulo da história.', secret: false },
+    redeDeApoio: { id: 'redeDeApoio', icon: '📞', name: 'Rede de Apoio', desc: 'Utilizou um canal de ajuda ou denunciou conteúdo dentro do jogo.', secret: false },
+    tudoTemConsequencia: { id: 'tudoTemConsequencia', icon: '⚠️', name: 'Tudo Tem Consequência', desc: 'Desbloqueou um final negativo e viu no que a omissão ou a cumplicidade dão.', secret: false },
+    todosOsCaminhos: { id: 'todosOsCaminhos', icon: '🗺️', name: 'Todos os Caminhos', desc: 'Desbloqueou os 6 finais possíveis da história.', secret: true }
 };
 
 // ============================================
@@ -817,9 +824,13 @@ const DOM = {};
 function cacheDom() {
     const ids = [
         'loading-screen','menu-screen','settings-screen','about-screen','achievements-screen','learn-screen','player-setup-screen',
-        'game-screen','hub-screen','chapter-transition','result-screen',
+        'game-screen','hub-screen','chapter-transition','result-screen','progress-screen','endings-screen',
         'loading-bar','loading-text','menu-stats',
-        'btn-new-game','btn-continue','btn-achievements-menu','btn-learn-more','btn-settings','btn-about',
+        'btn-new-game','btn-continue','btn-achievements-menu','btn-progress-menu','btn-endings-menu','btn-progress-back','btn-endings-back',
+        'progress-empty','progress-content','progress-action-stats','endings-grid','endings-progress-label',
+        'pg-security','pg-empathy','pg-courage','pg-trust','pgv-security','pgv-empathy','pgv-courage','pgv-trust',
+        'pgrel-rafael','pgrel-bia','pgrel-lucas','pgrelv-rafael','pgrelv-bia','pgrelv-lucas',
+        'btn-learn-more','btn-settings','btn-about',
         'btn-settings-back','toggle-music','toggle-sfx','volume-slider','toggle-animations','text-speed','btn-clear-data',
         'btn-about-back','btn-achievements-back','btn-learn-back','btn-setup-back','btn-start-game',
         'input-player-name','avatar-grid',
@@ -854,7 +865,8 @@ function cacheDom() {
         'btn-play-again','btn-share-result','btn-result-menu',
         'confirm-modal','confirm-title','confirm-text','confirm-cancel','confirm-accept',
         'scene-image-container',
-        'phone-nav-messages','phone-nav-conecta','phone-nav-notifications','phone-nav-evidence'
+        'phone-nav-messages','phone-nav-conecta','phone-nav-notifications','phone-nav-evidence',
+        'post-modal','post-options','btn-close-post-modal'
     ];
     ids.forEach(id => { DOM[id] = document.getElementById(id); });
 }
@@ -882,6 +894,8 @@ const SaveSystem = {
                 gamesPlayed: gameState.gamesPlayed,
                 hasPlayed: gameState.hasPlayed, lastEnding: gameState.lastEnding,
                 chatRepliesUsed: gameState.chatRepliesUsed,
+                endingsUnlocked: gameState.endingsUnlocked,
+                postsMade: gameState.postsMade,
                 savedAt: Date.now()
             }));
             return true;
@@ -1334,6 +1348,7 @@ function renderPhoneScene(scene, tab) {
                         showStatToast('🚨 Denúncia registrada', 1);
                         gameState.actionStats.reports++;
                         SynthAudio.playSFX('notif');
+                        if (gameState.actionStats.reports >= 2) unlockAchievement('redeDeApoio');
                     }
                 }
             });
@@ -1359,6 +1374,20 @@ function renderPhoneChat(scene) {
 
 function renderPhoneConecta(scene) {
     let h = `<div class="phone-app-header"><span class="phone-app-name">🌐 Conecta 9B</span></div>`;
+
+    // Botão de nova publicação (v2.0) — disponível a partir do capítulo 2, uma vez por partida
+    if (gameState.chapter >= 2) {
+        const used = !!gameState.postsMade.conecta;
+        h += `<div style="padding:10px 16px 4px"><button class="menu-btn" id="btn-open-post-modal" ${used ? 'disabled' : ''} style="width:100%;padding:10px;font-size:12px">
+                <span class="btn-icon">✏️</span><span class="btn-text">${used ? 'VOCÊ JÁ PUBLICOU' : 'FAZER UMA PUBLICAÇÃO'}</span>
+              </button></div>`;
+        if (used && gameState.postsMade.conectaText) {
+            h += `<div class="conecta-post" style="border-left: 2px solid var(--purple);">
+                    <div class="conecta-header"><div class="conecta-avatar">${gameState.playerAvatar}</div><div class="conecta-username">@${(gameState.playerName||'voce').toLowerCase()}</div><div class="conecta-time">agora</div></div>
+                    <div class="conecta-content">${gameState.postsMade.conectaText}</div>
+                  </div>`;
+        }
+    }
     
     // Stories Bar
     h += `<div class="stories-container">
@@ -1417,6 +1446,71 @@ function renderPhoneConecta(scene) {
               </div>`;
     }
     return h;
+}
+
+// ============================================
+// MODAL "POSTAR NO CONECTA" (v2.0)
+// ============================================
+const POST_OPTIONS = [
+    {
+        id: 'support',
+        preview: '"Gente que fica rindo da vida dos outros devia se enxergar. Chega de fingir que isso é brincadeira. 💜"',
+        effectLabel: '💪 +Coragem 💜 +Empatia 🤝 Rafael confia mais',
+        apply: () => { applyChoiceEffects({ courage: 10, empathy: 5 }); applyRelEffects({ rafael: 10, lucas: -5 }); }
+    },
+    {
+        id: 'vague',
+        preview: '"Só uma indireta pra quem sabe quem é... deviam ter mais vergonha na cara."',
+        effectLabel: '💪 +Coragem leve 🤝 Confiança -',
+        apply: () => { applyChoiceEffects({ courage: 5, trust: -5 }); }
+    },
+    {
+        id: 'silent',
+        preview: 'Você decide não postar nada e apenas observar a timeline por enquanto.',
+        effectLabel: '📵 Conteúdo Retido +1',
+        apply: () => { gameState.actionStats.contentNotShared = (gameState.actionStats.contentNotShared||0)+1; }
+    }
+];
+
+function applyChoiceEffects(effects) {
+    Object.entries(effects).forEach(([k, v]) => {
+        if (gameState[k] !== undefined) gameState[k] = clamp(gameState[k] + v, 0, 100);
+    });
+}
+
+function openPostModal() {
+    const container = DOM['post-options'];
+    if (!container) return;
+    container.innerHTML = '';
+    POST_OPTIONS.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'post-option-btn';
+        btn.innerHTML = `<div class="post-option-preview">${opt.preview}</div><div class="post-option-effect">${opt.effectLabel}</div>`;
+        btn.addEventListener('click', () => {
+            opt.apply();
+            gameState.postsMade.conecta = true;
+            gameState.postsMade.conectaText = opt.id === 'silent' ? null : opt.preview.replace(/^"|"$/g, '');
+            updateAllUI();
+            checkAchievements();
+            SaveSystem.save();
+            closePostModal();
+            showStatToast('📝 Publicação registrada', 1);
+            SynthAudio.playSFX('click');
+            // Re-renderiza a tela do Conecta que estiver visível no momento
+            if (currentPhoneScene && DOM['phone-container'] && DOM['phone-container'].style.display !== 'none') {
+                renderPhoneScene(currentPhoneScene, 'conecta');
+            }
+            if (activeHubTab === 'conecta' && DOM['hub-phone-panel'] && DOM['hub-phone-panel'].style.display === 'flex') {
+                renderHubPhonePanel();
+            }
+        });
+        container.appendChild(btn);
+    });
+    if (DOM['post-modal']) DOM['post-modal'].style.display = 'flex';
+}
+
+function closePostModal() {
+    if (DOM['post-modal']) DOM['post-modal'].style.display = 'none';
 }
 
 function renderPhoneNotifications(scene) {
@@ -1693,6 +1787,18 @@ function renderHubPhonePanel() {
                     <span class="hub-contact-arrow">💬</span>
                  </div>`;
 
+        // Lucas Chat (v2.0)
+        const lVal = gameState.relationships.lucas;
+        let lStatus = lVal >= 60 ? 'Parceiro de jogos' : lVal >= 35 ? 'Indiferente' : 'Na defensiva';
+        html += `<div class="hub-contact-item" data-contact="lucas">
+                    <span class="hub-contact-avatar">😎</span>
+                    <div class="hub-contact-info">
+                        <span class="hub-contact-name">Lucas</span>
+                        <span class="hub-contact-status">${lStatus} (${lVal}%)</span>
+                    </div>
+                    <span class="hub-contact-arrow">💬</span>
+                 </div>`;
+
         html += '</div>';
     } else if (activeHubTab === 'conecta') {
         html = renderPhoneConecta({ phoneType: 'conecta' });
@@ -1746,11 +1852,47 @@ function open1on1Chat(charId) {
             ];
         }
     } else if (charId === 'bia') {
-        chatHtml += `<div class="hub-chat-msg"><div class="hub-chat-msg-avatar">😊</div><div class="hub-chat-msg-bubble">Oii ${gameState.playerName}! O que tá achando de como as coisas tão indo na turma?</div></div>`;
-        replyOptions = [
-            { text: '"Tô tentando fazer a coisa certa."', rel: { bia: 5 }, id: 'b1' },
-            { text: '"Tá tenso, mas a gente se ajuda!"', rel: { bia: 5 }, id: 'b2' }
-        ];
+        const biaVal = gameState.relationships.bia;
+        if (biaVal >= 70) {
+            chatHtml += `<div class="hub-chat-msg"><div class="hub-chat-msg-avatar">😊</div><div class="hub-chat-msg-bubble">Oii ${gameState.playerName}! Fico feliz que a gente tá remando junto nisso. Se topar, posso te ajudar a organizar as provas.</div></div>`;
+            replyOptions = [
+                { text: '"Bora sim, conto contigo, Bia."', rel: { bia: 5 }, id: 'b1' },
+                { text: '"Combinado, valeu pela força."', rel: { bia: 5 }, id: 'b2' }
+            ];
+        } else if (biaVal >= 45) {
+            chatHtml += `<div class="hub-chat-msg"><div class="hub-chat-msg-avatar">😊</div><div class="hub-chat-msg-bubble">Oii ${gameState.playerName}! O que tá achando de como as coisas tão indo na turma?</div></div>`;
+            replyOptions = [
+                { text: '"Tô tentando fazer a coisa certa."', rel: { bia: 5 }, id: 'b3' },
+                { text: '"Tá tenso, mas a gente se ajuda!"', rel: { bia: 5 }, id: 'b4' }
+            ];
+        } else {
+            chatHtml += `<div class="hub-chat-msg"><div class="hub-chat-msg-avatar">😊</div><div class="hub-chat-msg-bubble">Sincerando: eu esperava mais de você nessa história toda com o Rafael...</div></div>`;
+            replyOptions = [
+                { text: '"Você tem razão, posso melhorar."', rel: { bia: 10 }, id: 'b5' },
+                { text: '"Cada um faz o que pode, Bia."', rel: { bia: 0 }, id: 'b6' }
+            ];
+        }
+    } else if (charId === 'lucas') {
+        const lucasVal = gameState.relationships.lucas;
+        if (lucasVal >= 60) {
+            chatHtml += `<div class="hub-chat-msg"><div class="hub-chat-msg-avatar">😎</div><div class="hub-chat-msg-bubble">E aí, ${gameState.playerName}! Bora de squad hoje à noite? Preciso desopilar depois dessa semana doida.</div></div>`;
+            replyOptions = [
+                { text: '"Bora! Só sem clima pesado com o Rafael, hein."', rel: { lucas: 5 }, id: 'l1' },
+                { text: '"Topo, mano."', rel: { lucas: 5 }, id: 'l2' }
+            ];
+        } else if (lucasVal >= 35) {
+            chatHtml += `<div class="hub-chat-msg"><div class="hub-chat-msg-avatar">😎</div><div class="hub-chat-msg-bubble">Fala. Andaram comentando um monte de coisa essa semana, né? Eu nem tô ligando muito pra isso.</div></div>`;
+            replyOptions = [
+                { text: '"Deveria ligar. Isso afetou o Rafael de verdade."', rel: { lucas: -5, rafael: 5 }, id: 'l3' },
+                { text: '"É, melhor nem se meter."', rel: { lucas: 5 }, id: 'l4' }
+            ];
+        } else {
+            chatHtml += `<div class="hub-chat-msg"><div class="hub-chat-msg-avatar">😎</div><div class="hub-chat-msg-bubble">Por que você fica me enchendo com esse assunto? Fala logo o que você quer.</div></div>`;
+            replyOptions = [
+                { text: '"Só quero entender o que rolou de verdade."', rel: { lucas: 5 }, id: 'l5' },
+                { text: '"Nada. Esquece."', rel: { lucas: 0 }, id: 'l6' }
+            ];
+        }
     }
 
     if (DOM['hub-chat-content']) DOM['hub-chat-content'].innerHTML = chatHtml;
@@ -1875,7 +2017,9 @@ function setupHubEvents() {
 function goToChapter(chapterId) {
     const ch = chapters.find(c => c.id === chapterId);
     if (!ch) { endGame(); return; }
-    
+
+    if (gameState.chapter === 1 && chapterId > 1) unlockAchievement('firstStep');
+
     gameState.chapter = chapterId;
     gameState.scene = 0;
     if (DOM['transition-chapter-num']) DOM['transition-chapter-num'].textContent = `Capítulo ${ch.id}`;
@@ -1940,32 +2084,36 @@ function endGame() {
 
     gameState.lastEnding = ending;
 
+    if (!gameState.endingsUnlocked.includes(ending)) gameState.endingsUnlocked.push(ending);
+
     if (!gameState.achievements.includes('secondChance') && gameState.gamesPlayed > 1) {
         unlockAchievement('secondChance');
     }
+    if (ending === 'negative' || ending === 'silent') unlockAchievement('tudoTemConsequencia');
+    if (gameState.endingsUnlocked.length >= 6) unlockAchievement('todosOsCaminhos');
 
     SaveSystem.save();
     showResultScreen(ending);
 }
 
+const ENDINGS_CONFIG = {
+    heroic: { emoji:'🌟', title:'VOCÊ FEZ A DIFERENÇA!', subtitle:'Sua liderança ética e sensibilidade transformaram o ambiente escolar.', cls:'hero',
+        message: () => `Parabéns, ${gameState.playerName}! Suas posturas mostraram que o cyberbullying recua quando as pessoas decidem agir. Você acolheu Rafael, documentou as difamações e liderou mudanças na escola. Você é um exemplo de cidadania digital!` },
+    guardian: { emoji:'🛡️', title:'GUARDIÃO DA SEGURANÇA', subtitle:'Você usou a inteligência e a responsabilidade para proteger quem precisava.', cls:'positive',
+        message: () => `Sua atuação focou na prevenção e na coleta responsável de evidências, ${gameState.playerName}. Graças à sua denúncia e cuidado, a escola pôde tomar providências éticas e legais.` },
+    friend: { emoji:'💜', title:'AMIGO DE VERDADE', subtitle:'Sua empatia garantiu que Rafael não se sentisse sozinho nas horas mais difíceis.', cls:'friend',
+        message: () => `Mais do que denunciar, você esteve presente para quem precisava, ${gameState.playerName}. O apoio emocional que você deu ao Rafael fez toda a diferença na vida dele.` },
+    neutral: { emoji:'💛', title:'AINDA DÁ TEMPO', subtitle:'Houve boas decisões pontuais, mas você permitiu que a agressão continuasse.', cls:'neutral',
+        message: () => `Você não impulsionou o ódio, mas a hesitação em alguns momentos permitiu que a situação se arrastasse, ${gameState.playerName}. A internet precisa de mais barreira ativa. Tente jogar novamente!` },
+    silent: { emoji:'🤐', title:'SILÊNCIO QUE PESA', subtitle:'Ficar em silêncio nem sempre significa ser neutro. O omisso fortalece o agressor.', cls:'silent',
+        message: () => `Seu silêncio permitiu que a perseguição contra Rafael continuasse sem barreiras, ${gameState.playerName}. No mundo real, a falta de ajuda é percebida como apoio ao bullying. Que tal tentar uma nova postura?` },
+    negative: { emoji:'⚠️', title:'TUDO SAIU DO CONTROLE', subtitle:'Sua conivência com as zombarias amplificou o dano moral no Rafael.', cls:'negative',
+        message: () => `Encaminhar fotos roubadas ou rir de piadas cruéis causa estragos profundos e duradouros na saúde mental das pessoas. Use esta experiência virtual para agir de forma diferente no seu dia a dia real.` }
+};
+
 function showResultScreen(ending) {
     showScreen('result-screen');
-    const configs = {
-        heroic: { emoji:'🌟', title:'VOCÊ FEZ A DIFERENÇA!', subtitle:'Sua liderança ética e sensibilidade transformaram o ambiente escolar.', cls:'hero',
-            message: () => `Parabéns, ${gameState.playerName}! Suas posturas mostraram que o cyberbullying recua quando as pessoas decidem agir. Você acolheu Rafael, documentou as difamações e liderou mudanças na escola. Você é um exemplo de cidadania digital!` },
-        guardian: { emoji:'🛡️', title:'GUARDIÃO DA SEGURANÇA', subtitle:'Você usou a inteligência e a responsabilidade para proteger quem precisava.', cls:'positive',
-            message: () => `Sua atuação focou na prevenção e na coleta responsável de evidências, ${gameState.playerName}. Graças à sua denúncia e cuidado, a escola pôde tomar providências éticas e legais.` },
-        friend: { emoji:'💜', title:'AMIGO DE VERDADE', subtitle:'Sua empatia garantiu que Rafael não se sentisse sozinho nas horas mais difíceis.', cls:'friend',
-            message: () => `Mais do que denunciar, você esteve presente para quem precisava, ${gameState.playerName}. O apoio emocional que você deu ao Rafael fez toda a diferença na vida dele.` },
-        neutral: { emoji:'💛', title:'AINDA DÁ TEMPO', subtitle:'Houve boas decisões pontuais, mas você permitiu que a agressão continuasse.', cls:'neutral',
-            message: () => `Você não impulsionou o ódio, mas a hesitação em alguns momentos permitiu que a situação se arrastasse, ${gameState.playerName}. A internet precisa de mais barreira ativa. Tente jogar novamente!` },
-        silent: { emoji:'🤐', title:'SILÊNCIO QUE PESA', subtitle:'Ficar em silêncio nem sempre significa ser neutro. O omisso fortalece o agressor.', cls:'silent',
-            message: () => `Seu silêncio permitiu que a perseguição contra Rafael continuasse sem barreiras, ${gameState.playerName}. No mundo real, a falta de ajuda é percebida como apoio ao bullying. Que tal tentar uma nova postura?` },
-        negative: { emoji:'⚠️', title:'TUDO SAIU DO CONTROLE', subtitle:'Sua conivência com as zombarias amplificou o dano moral no Rafael.', cls:'negative',
-            message: () => `Encaminhar fotos roubadas ou rir de piadas cruéis causa estragos profundos e duradouros na saúde mental das pessoas. Use esta experiência virtual para agir de forma diferente no seu dia a dia real.` }
-    };
-    
-    const c = configs[ending] || configs['neutral'];
+    const c = ENDINGS_CONFIG[ending] || ENDINGS_CONFIG['neutral'];
 
     if (DOM['result-emoji']) DOM['result-emoji'].textContent = c.emoji;
     if (DOM['result-title']) DOM['result-title'].textContent = c.title;
@@ -2069,7 +2217,10 @@ function resetState() {
     gameState.chapter = 1; gameState.scene = 0;
     gameState.security = 50; gameState.empathy = 50;
     gameState.courage = 50; gameState.trust = 50;
-    gameState.choices = []; gameState.achievements = [];
+    gameState.choices = [];
+    // OBS: gameState.achievements, endingsUnlocked e postsMade NÃO são resetados aqui de propósito —
+    // são um "troféu" permanente do jogador que deve sobreviver a novas partidas (corrige bug antigo
+    // que apagava todas as medalhas toda vez que "Novo Jogo" era iniciado).
     gameState.choiceFlags = {};
     gameState.relationships = { rafael: 50, bia: 60, lucas: 50 };
     gameState.evidence = [];
@@ -2124,7 +2275,9 @@ function continueGame() {
         actionStats: saved.actionStats||{reports:0,peopleHelped:0,evidenceFound:0,contentNotShared:0},
         gamesPlayed: saved.gamesPlayed||0,
         hasPlayed: saved.hasPlayed||false, lastEnding: saved.lastEnding||null,
-        chatRepliesUsed: saved.chatRepliesUsed||{}
+        chatRepliesUsed: saved.chatRepliesUsed||{},
+        endingsUnlocked: saved.endingsUnlocked||[],
+        postsMade: saved.postsMade||{}
     });
     
     updateAllUI(); 
@@ -2150,6 +2303,67 @@ function renderAchievementsScreen() {
             div.innerHTML = `<span class="ach-g-icon">❓</span><span class="ach-g-name">Conquista Secreta</span><span class="ach-g-desc">Jogue para descobrir como desbloquear.</span>`;
         } else {
             div.innerHTML = `<span class="ach-g-icon">${a.icon}</span><span class="ach-g-name">${a.name}</span><span class="ach-g-desc">${a.desc}</span>`;
+        }
+        grid.appendChild(div);
+    });
+}
+
+// ============================================
+// TELA "MEU PROGRESSO" (v2.0)
+// ============================================
+function renderProgressScreen() {
+    const hasProgress = gameState.hasPlayed || gameState.chapter > 1 || gameState.choices.length > 0;
+    if (DOM['progress-empty']) DOM['progress-empty'].style.display = hasProgress ? 'none' : 'block';
+    if (DOM['progress-content']) DOM['progress-content'].style.display = hasProgress ? 'block' : 'none';
+    if (!hasProgress) return;
+
+    const s = gameState;
+    if (DOM['pg-security']) DOM['pg-security'].style.width = s.security + '%';
+    if (DOM['pg-empathy']) DOM['pg-empathy'].style.width = s.empathy + '%';
+    if (DOM['pg-courage']) DOM['pg-courage'].style.width = s.courage + '%';
+    if (DOM['pg-trust']) DOM['pg-trust'].style.width = s.trust + '%';
+    if (DOM['pgv-security']) DOM['pgv-security'].textContent = s.security;
+    if (DOM['pgv-empathy']) DOM['pgv-empathy'].textContent = s.empathy;
+    if (DOM['pgv-courage']) DOM['pgv-courage'].textContent = s.courage;
+    if (DOM['pgv-trust']) DOM['pgv-trust'].textContent = s.trust;
+
+    if (DOM['pgrel-rafael']) DOM['pgrel-rafael'].style.width = s.relationships.rafael + '%';
+    if (DOM['pgrel-bia']) DOM['pgrel-bia'].style.width = s.relationships.bia + '%';
+    if (DOM['pgrel-lucas']) DOM['pgrel-lucas'].style.width = s.relationships.lucas + '%';
+    if (DOM['pgrelv-rafael']) DOM['pgrelv-rafael'].textContent = s.relationships.rafael;
+    if (DOM['pgrelv-bia']) DOM['pgrelv-bia'].textContent = s.relationships.bia;
+    if (DOM['pgrelv-lucas']) DOM['pgrelv-lucas'].textContent = s.relationships.lucas;
+
+    if (DOM['progress-action-stats']) {
+        const as = s.actionStats;
+        DOM['progress-action-stats'].innerHTML = `
+            <div class="action-stat-item"><span class="action-stat-value">${s.gamesPlayed||0}</span><span class="action-stat-label">🎮 Partidas jogadas</span></div>
+            <div class="action-stat-item"><span class="action-stat-value">${as.reports||0}</span><span class="action-stat-label">🚨 Denúncias</span></div>
+            <div class="action-stat-item"><span class="action-stat-value">${s.evidence.length||0}</span><span class="action-stat-label">🔎 Evidências</span></div>
+            <div class="action-stat-item"><span class="action-stat-value">${s.achievements.length}/${Object.keys(ACHIEVEMENTS).length}</span><span class="action-stat-label">🏆 Conquistas</span></div>`;
+    }
+}
+
+// ============================================
+// GALERIA DE FINAIS (v2.0)
+// ============================================
+const ENDING_ORDER = ['heroic', 'guardian', 'friend', 'neutral', 'silent', 'negative'];
+function renderEndingsScreen() {
+    const grid = DOM['endings-grid'];
+    if (!grid) return;
+    grid.innerHTML = '';
+    const unlocked = gameState.endingsUnlocked || [];
+    if (DOM['endings-progress-label']) DOM['endings-progress-label'].textContent = `${unlocked.length}/${ENDING_ORDER.length} finais descobertos`;
+
+    ENDING_ORDER.forEach(id => {
+        const cfg = ENDINGS_CONFIG[id];
+        const isUnlocked = unlocked.includes(id);
+        const div = document.createElement('div');
+        div.className = `ach-grid-item ${isUnlocked ? 'unlocked' : 'locked'}`;
+        if (isUnlocked) {
+            div.innerHTML = `<span class="ach-g-icon">${cfg.emoji}</span><span class="ach-g-name">${cfg.title}</span><span class="ach-g-desc">${cfg.subtitle}</span>`;
+        } else {
+            div.innerHTML = `<span class="ach-g-icon">🔒</span><span class="ach-g-name">Caminho desconhecido</span><span class="ach-g-desc">Jogue de forma diferente para descobrir este final.</span>`;
         }
         grid.appendChild(div);
     });
@@ -2253,6 +2467,16 @@ function setupEvents() {
     if (DOM['btn-learn-more']) {
         DOM['btn-learn-more'].addEventListener('click', () => showScreen('learn-screen'));
     }
+
+    if (DOM['btn-progress-menu']) {
+        DOM['btn-progress-menu'].addEventListener('click', () => { renderProgressScreen(); showScreen('progress-screen'); });
+    }
+    if (DOM['btn-progress-back']) DOM['btn-progress-back'].addEventListener('click', () => showScreen('menu-screen'));
+
+    if (DOM['btn-endings-menu']) {
+        DOM['btn-endings-menu'].addEventListener('click', () => { renderEndingsScreen(); showScreen('endings-screen'); });
+    }
+    if (DOM['btn-endings-back']) DOM['btn-endings-back'].addEventListener('click', () => showScreen('menu-screen'));
     
     if (DOM['btn-settings']) DOM['btn-settings'].addEventListener('click', () => showScreen('settings-screen'));
     if (DOM['btn-about']) DOM['btn-about'].addEventListener('click', () => showScreen('about-screen'));
@@ -2308,6 +2532,11 @@ function setupEvents() {
         });
     }
 
+    // Links reais de canais de ajuda (Disque 100 / CVV / SaferNet)
+    document.querySelectorAll('.help-link').forEach(link => {
+        link.addEventListener('click', () => unlockAchievement('redeDeApoio'));
+    });
+
     if (DOM['btn-about-back']) DOM['btn-about-back'].addEventListener('click', () => showScreen('menu-screen'));
     if (DOM['btn-achievements-back']) DOM['btn-achievements-back'].addEventListener('click', () => showScreen('menu-screen'));
 
@@ -2353,6 +2582,15 @@ function setupEvents() {
     });
 
     setupHubEvents();
+
+    // Modal "Postar no Conecta" (delegação de evento pois o botão é recriado a cada render)
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#btn-open-post-modal')) openPostModal();
+    });
+    if (DOM['btn-close-post-modal']) DOM['btn-close-post-modal'].addEventListener('click', closePostModal);
+    if (DOM['post-modal']) {
+        DOM['post-modal'].addEventListener('click', (e) => { if (e.target === DOM['post-modal']) closePostModal(); });
+    }
 
     document.addEventListener('keydown', e => {
         const isGameActive = DOM['game-screen'] && DOM['game-screen'].classList.contains('active');
