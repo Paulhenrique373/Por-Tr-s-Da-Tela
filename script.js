@@ -846,6 +846,7 @@ function cacheDom() {
         'evidence-toast','evidence-toast-name',
         'rel-toast','rel-toast-avatar','rel-toast-text','share-toast',
         'result-emoji','result-header','result-title','result-subtitle',
+        'certificate',
         'result-profile-card','profile-badge-icon','profile-title','profile-desc',
         'rs-security','rs-empathy','rs-courage','rs-trust','rsv-security','rsv-empathy','rsv-courage','rsv-trust',
         'result-action-stats','action-stats-grid',
@@ -2025,6 +2026,22 @@ function showResultScreen(ending) {
     }
 
     if (DOM['result-message']) DOM['result-message'].textContent = typeof c.message === 'function' ? c.message() : c.message;
+
+    // Certificado: exibido apenas nos finais positivos, como reconhecimento de cidadania digital
+    const certEndings = ['heroic', 'guardian', 'friend'];
+    if (DOM['certificate']) {
+        if (certEndings.includes(ending)) {
+            DOM['certificate'].style.display = '';
+            const certNameEl = document.getElementById('cert-name');
+            const certDateEl = document.getElementById('cert-date');
+            const certBadgeEl = document.getElementById('cert-badge-title');
+            if (certNameEl) certNameEl.textContent = gameState.playerName || 'Jogador';
+            if (certDateEl) certDateEl.textContent = `Emitido em ${new Date().toLocaleDateString('pt-BR')}`;
+            if (certBadgeEl) certBadgeEl.textContent = `${prof.icon} ${prof.title}`;
+        } else {
+            DOM['certificate'].style.display = 'none';
+        }
+    }
 }
 
 function shareResultText() {
