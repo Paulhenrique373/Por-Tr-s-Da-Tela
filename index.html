@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Por Trás da Tela — Cyber-Espaço Interativo</title>
+    <meta name="description" content="Ficção interativa educativa sobre cyberbullying. Faça escolhas, viva as consequências e aprenda sobre empatia e cidadania digital.">
+    <meta name="theme-color" content="#070B14">
+    <meta property="og:title" content="Por Trás da Tela — Cyber-Espaço Interativo">
+    <meta property="og:description" content="Ficção interativa educativa sobre cyberbullying. Faça escolhas, viva as consequências e aprenda sobre empatia e cidadania digital.">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -77,7 +83,7 @@
     <div id="player-setup-screen" class="screen">
         <div class="panel-container">
             <div class="panel-header">
-                <button class="back-btn" id="btn-setup-back">←</button>
+                <button class="back-btn" id="btn-setup-back" aria-label="Voltar">←</button>
                 <h2>👤 QUEM É VOCÊ?</h2>
             </div>
             <div class="panel-body">
@@ -121,7 +127,7 @@
     <div id="settings-screen" class="screen">
         <div class="panel-container">
             <div class="panel-header">
-                <button class="back-btn" id="btn-settings-back">←</button>
+                <button class="back-btn" id="btn-settings-back" aria-label="Voltar">←</button>
                 <h2>⚙ CONFIGURAÇÕES</h2>
             </div>
             <div class="panel-body">
@@ -150,6 +156,14 @@
                         <option value="instant">Instantâneo</option>
                     </select>
                 </div>
+                <div class="setting-item">
+                    <div class="setting-info"><span class="setting-icon">💾</span><span class="setting-label">Backup do Progresso</span></div>
+                </div>
+                <div class="setup-actions" style="gap:10px;display:flex;flex-direction:column;margin-bottom:20px">
+                    <button class="menu-btn" id="btn-export-save"><span class="btn-icon">⬇️</span><span class="btn-text">Exportar progresso (.json)</span></button>
+                    <button class="menu-btn" id="btn-import-save"><span class="btn-icon">⬆️</span><span class="btn-text">Importar progresso</span></button>
+                    <input type="file" id="input-import-save" accept="application/json" style="display:none">
+                </div>
                 <div class="setting-item danger">
                     <button class="danger-btn" id="btn-clear-data"><span>🗑️</span><span>Apagar Progresso</span></button>
                 </div>
@@ -161,7 +175,7 @@
     <div id="about-screen" class="screen">
         <div class="panel-container">
             <div class="panel-header">
-                <button class="back-btn" id="btn-about-back">←</button>
+                <button class="back-btn" id="btn-about-back" aria-label="Voltar">←</button>
                 <h2>ℹ️ SOBRE O JOGO</h2>
             </div>
             <div class="panel-body about-body">
@@ -177,7 +191,7 @@
     <div id="learn-screen" class="screen">
         <div class="panel-container panel-wide">
             <div class="panel-header">
-                <button class="back-btn" id="btn-learn-back">←</button>
+                <button class="back-btn" id="btn-learn-back" aria-label="Voltar">←</button>
                 <h2>📚 APRENDA MAIS SOBRE CYBERBULLYING</h2>
             </div>
             <div class="panel-body">
@@ -211,7 +225,7 @@
     <div id="achievements-screen" class="screen">
         <div class="panel-container panel-wide">
             <div class="panel-header">
-                <button class="back-btn" id="btn-achievements-back">←</button>
+                <button class="back-btn" id="btn-achievements-back" aria-label="Voltar">←</button>
                 <h2>🏆 CONQUISTAS DESBLOQUEADAS</h2>
             </div>
             <div class="panel-body">
@@ -224,7 +238,7 @@
     <div id="progress-screen" class="screen">
         <div class="panel-container panel-wide">
             <div class="panel-header">
-                <button class="back-btn" id="btn-progress-back">←</button>
+                <button class="back-btn" id="btn-progress-back" aria-label="Voltar">←</button>
                 <h2>📊 MEU PROGRESSO</h2>
             </div>
             <div class="panel-body">
@@ -254,7 +268,7 @@
     <div id="endings-screen" class="screen">
         <div class="panel-container panel-wide">
             <div class="panel-header">
-                <button class="back-btn" id="btn-endings-back">←</button>
+                <button class="back-btn" id="btn-endings-back" aria-label="Voltar">←</button>
                 <h2>🎭 GALERIA DE FINAIS</h2>
             </div>
             <div class="panel-body">
@@ -268,7 +282,7 @@
     <div id="game-screen" class="screen">
         <header class="game-header">
             <div class="header-left">
-                <button class="icon-btn" id="btn-game-menu">☰</button>
+                <button class="icon-btn" id="btn-game-menu" aria-label="Abrir menu do jogo">☰</button>
                 <div class="chapter-indicator" id="chapter-indicator">
                     <span class="chapter-label">Capítulo 1</span>
                     <span class="chapter-title-header" id="chapter-title-header">A Primeira Mensagem</span>
@@ -358,7 +372,7 @@
             <div class="sidebar-content">
                 <div class="sidebar-header">
                     <h3>MENU DO JOGO</h3>
-                    <button class="icon-btn" id="btn-close-sidebar">✕</button>
+                    <button class="icon-btn" id="btn-close-sidebar" aria-label="Fechar menu">✕</button>
                 </div>
                 <div class="sidebar-player-info" id="sidebar-player-info">
                     <span class="sidebar-avatar" id="sidebar-avatar">🧑</span>
@@ -430,11 +444,11 @@
     </div>
 
     <!-- HUB MODALS -->
-    <div id="hub-phone-panel" class="overlay" style="display:none;">
+    <div id="hub-phone-panel" class="overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Celular">
         <div class="hub-panel-card phone-panel">
             <div class="hub-panel-header">
                 <h3>📱 Celular</h3>
-                <button class="icon-btn hub-panel-close" data-close="hub-phone-panel">✕</button>
+                <button class="icon-btn hub-panel-close" data-close="hub-phone-panel" aria-label="Fechar celular">✕</button>
             </div>
             <div class="hub-phone-nav">
                 <button class="hub-phone-tab active" data-hubtab="contacts">👥 Contatos</button>
@@ -445,44 +459,44 @@
         </div>
     </div>
 
-    <div id="hub-chat-panel" class="overlay" style="display:none;">
+    <div id="hub-chat-panel" class="overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Conversa">
         <div class="hub-panel-card">
             <div class="hub-panel-header">
                 <h3 id="hub-chat-title">💬 Conversa</h3>
-                <button class="icon-btn hub-panel-close" data-close="hub-chat-panel">✕</button>
+                <button class="icon-btn hub-panel-close" data-close="hub-chat-panel" aria-label="Fechar conversa">✕</button>
             </div>
             <div class="hub-panel-body hub-chat-body" id="hub-chat-content"></div>
             <div class="hub-chat-input-area" id="hub-chat-input-area"></div>
         </div>
     </div>
 
-    <div id="hub-evidence-panel" class="overlay" style="display:none;">
+    <div id="hub-evidence-panel" class="overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Evidências">
         <div class="hub-panel-card">
             <div class="hub-panel-header">
                 <h3>🔎 Evidências</h3>
-                <button class="icon-btn hub-panel-close" data-close="hub-evidence-panel">✕</button>
+                <button class="icon-btn hub-panel-close" data-close="hub-evidence-panel" aria-label="Fechar evidências">✕</button>
             </div>
             <div class="hub-panel-body" id="hub-evidence-content"></div>
         </div>
     </div>
 
-    <div id="hub-relationships-panel" class="overlay" style="display:none;">
+    <div id="hub-relationships-panel" class="overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Afinidades">
         <div class="hub-panel-card">
             <div class="hub-panel-header">
                 <h3>👥 Afinidades</h3>
-                <button class="icon-btn hub-panel-close" data-close="hub-relationships-panel">✕</button>
+                <button class="icon-btn hub-panel-close" data-close="hub-relationships-panel" aria-label="Fechar afinidades">✕</button>
             </div>
             <div class="hub-panel-body" id="hub-relationships-content"></div>
         </div>
     </div>
 
     <!-- Modal para Postar no Conecta (v2.0) -->
-    <div id="post-modal" class="overlay" style="display:none;">
+    <div id="post-modal" class="overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Fazer publicação">
         <div class="post-modal-card">
             <h3>📝 Fazer uma publicação no Conecta</h3>
             <p class="post-modal-desc">Escolha uma mensagem para publicar na sua timeline pública:</p>
             <div class="post-options" id="post-options"></div>
-            <button class="tip-btn" id="btn-close-post-modal" style="margin-top:14px;width:100%">Cancelar</button>
+            <button class="tip-btn" id="btn-close-post-modal" style="margin-top:14px;width:100%" aria-label="Cancelar publicação">Cancelar</button>
         </div>
     </div>
 
@@ -497,7 +511,7 @@
     </div>
 
     <!-- TIP -->
-    <div id="tip-overlay" class="overlay" style="display:none;">
+    <div id="tip-overlay" class="overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Dica de cidadania digital">
         <div class="tip-card">
             <div class="tip-icon">💡</div>
             <h3 class="tip-title">DICA DE CIDADANIA DIGITAL</h3>
@@ -590,13 +604,14 @@
             <div class="result-actions">
                 <button class="menu-btn primary-btn" id="btn-play-again"><span class="btn-icon">🔄</span><span class="btn-text">JOGAR NOVAMENTE</span></button>
                 <button class="menu-btn" id="btn-share-result"><span class="btn-icon">📤</span><span class="btn-text">COMPARTILHAR</span></button>
+                <button class="menu-btn" id="btn-download-cert"><span class="btn-icon">🖼️</span><span class="btn-text">BAIXAR CERTIFICADO</span></button>
                 <button class="menu-btn" id="btn-result-menu"><span class="btn-icon">🏠</span><span class="btn-text">MENU PRINCIPAL</span></button>
             </div>
         </div>
     </div>
 
     <!-- CONFIRM -->
-    <div id="confirm-modal" class="overlay" style="display:none;">
+    <div id="confirm-modal" class="overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Confirmação">
         <div class="confirm-card">
             <h3 id="confirm-title">Confirmação</h3>
             <p id="confirm-text"></p>
@@ -607,6 +622,7 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

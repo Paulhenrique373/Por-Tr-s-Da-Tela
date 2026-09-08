@@ -185,6 +185,9 @@ function showConfirm(title, text, onAccept) {
 
     if (DOM['confirm-accept']) DOM['confirm-accept'].addEventListener('click', confirmHandlers.accept);
     if (DOM['confirm-cancel']) DOM['confirm-cancel'].addEventListener('click', confirmHandlers.cancel);
+
+    // Acessibilidade: leva o foco do teclado para o botão de cancelar (ação mais segura) ao abrir
+    if (DOM['confirm-cancel']) DOM['confirm-cancel'].focus();
 }
 
 function getCurrentChapter() {
@@ -866,7 +869,8 @@ function cacheDom() {
         'confirm-modal','confirm-title','confirm-text','confirm-cancel','confirm-accept',
         'scene-image-container',
         'phone-nav-messages','phone-nav-conecta','phone-nav-notifications','phone-nav-evidence',
-        'post-modal','post-options','btn-close-post-modal'
+        'post-modal','post-options','btn-close-post-modal',
+        'btn-export-save','btn-import-save','input-import-save','btn-download-cert'
     ];
     ids.forEach(id => { DOM[id] = document.getElementById(id); });
 }
@@ -912,6 +916,35 @@ const SaveSystem = {
             const r = localStorage.getItem(this.SKEY);
             if (r) Object.assign(settings, JSON.parse(r));
         } catch(e) {}
+    },
+    // Exporta o save atual (localStorage) como arquivo .json para o usuário baixar
+    exportSave() {
+        const raw = localStorage.getItem(this.KEY);
+        if (!raw) { alert('Não há progresso salvo para exportar ainda.'); return false; }
+        try {
+            const blob = new Blob([raw], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `por-tras-da-tela-progresso-${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            return true;
+        } catch(e) { return false; }
+    },
+    // Importa um save exportado anteriormente, validando o formato antes de sobrescrever
+    importSave(jsonText) {
+        try {
+            const data = JSON.parse(jsonText);
+            if (!data || typeof data !== 'object' || typeof data.playerName === 'undefined') {
+                throw new Error('formato inválido');
+            }
+            localStorage.setItem(this.KEY, JSON.stringify(data));
+            return true;
+        } catch(e) { return false; }
     }
 };
 
@@ -2210,6 +2243,29 @@ Aprenda sobre empatia e segurança digital também!`;
     }
 }
 
+// Baixa o certificado como imagem PNG (usa html2canvas, carregado via CDN no index.html)
+function downloadCertificateImage() {
+    const certEl = DOM['certificate'];
+    if (!certEl || certEl.style.display === 'none') {
+        alert('Nenhum certificado disponível neste resultado.');
+        return;
+    }
+    if (typeof html2canvas === 'undefined') {
+        alert('Não foi possível carregar o gerador de imagem. Verifique sua conexão com a internet e tente novamente.');
+        return;
+    }
+    html2canvas(certEl, { backgroundColor: '#111827', scale: 2 }).then(canvas => {
+        const a = document.createElement('a');
+        a.download = `certificado-${(gameState.playerName || 'jogador').replace(/\s+/g, '-')}.png`;
+        a.href = canvas.toDataURL('image/png');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }).catch(() => {
+        alert('Não foi possível gerar a imagem do certificado.');
+    });
+}
+
 // ============================================
 // SETUP DO JOGADOR (PERSONALIZAÇÃO)
 // ============================================
@@ -2532,6 +2588,29 @@ function setupEvents() {
         });
     }
 
+    if (DOM['btn-export-save']) {
+        DOM['btn-export-save'].addEventListener('click', () => SaveSystem.exportSave());
+    }
+    if (DOM['btn-import-save'] && DOM['input-import-save']) {
+        DOM['btn-import-save'].addEventListener('click', () => DOM['input-import-save'].click());
+        DOM['input-import-save'].addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                const ok = SaveSystem.importSave(reader.result);
+                if (ok) {
+                    if (DOM['btn-continue']) DOM['btn-continue'].disabled = false;
+                    alert('Progresso importado com sucesso! Toque em "Continuar" no menu principal para retomar.');
+                } else {
+                    alert('Não foi possível importar esse arquivo. Verifique se é um arquivo de progresso válido exportado por este jogo.');
+                }
+                DOM['input-import-save'].value = '';
+            };
+            reader.readAsText(file);
+        });
+    }
+
     // Links reais de canais de ajuda (Disque 100 / CVV / SaferNet)
     document.querySelectorAll('.help-link').forEach(link => {
         link.addEventListener('click', () => unlockAchievement('redeDeApoio'));
@@ -2565,6 +2644,7 @@ function setupEvents() {
 
     if (DOM['btn-play-again']) DOM['btn-play-again'].addEventListener('click', () => { SaveSystem.clear(); openPlayerSetup(); });
     if (DOM['btn-share-result']) DOM['btn-share-result'].addEventListener('click', shareResultText);
+    if (DOM['btn-download-cert']) DOM['btn-download-cert'].addEventListener('click', downloadCertificateImage);
     if (DOM['btn-result-menu']) DOM['btn-result-menu'].addEventListener('click', () => { showScreen('menu-screen'); if (DOM['btn-continue']) DOM['btn-continue'].disabled = !SaveSystem.hasSave(); });
 
     const tabs = ['messages', 'conecta', 'notifications', 'evidence'];
@@ -2613,6 +2693,13 @@ function setupEvents() {
         if (e.key === 'Escape') {
             if (DOM['game-sidebar'] && DOM['game-sidebar'].classList.contains('open')) closeSidebar();
             if (DOM['tip-overlay'] && DOM['tip-overlay'].style.display === 'flex') DOM['btn-close-tip'].click();
+        }
+    });
+
+    // Acessibilidade: Esc fecha o modal de confirmação em qualquer tela (não só durante o jogo)
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && DOM['confirm-modal'] && DOM['confirm-modal'].style.display === 'flex') {
+            if (DOM['confirm-cancel']) DOM['confirm-cancel'].click();
         }
     });
 }
