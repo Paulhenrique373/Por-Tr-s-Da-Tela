@@ -10,6 +10,9 @@
     <meta property="og:description" content="Ficção interativa educativa sobre cyberbullying. Faça escolhas, viva as consequências e aprenda sobre empatia e cidadania digital.">
     <meta property="og:type" content="website">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -34,6 +37,9 @@
     <!-- MENU -->
     <div id="menu-screen" class="screen">
         <div class="menu-bg-effects">
+            <div class="glow-orb orb1"></div>
+            <div class="glow-orb orb2"></div>
+            <div class="glow-orb orb3"></div>
             <div class="floating-element fe1">💬</div>
             <div class="floating-element fe2">📱</div>
             <div class="floating-element fe3">🔒</div>
@@ -42,6 +48,7 @@
             <div class="floating-element fe6">💜</div>
             <div class="grid-overlay"></div>
             <div class="scanline"></div>
+            <div class="vignette"></div>
         </div>
         <div class="menu-content">
             <div class="menu-logo">
@@ -57,6 +64,7 @@
                 <button class="menu-btn" id="btn-continue" disabled>
                     <span class="btn-icon">📖</span><span class="btn-text">CONTINUAR</span>
                 </button>
+                <div class="menu-divider"></div>
                 <button class="menu-btn" id="btn-achievements-menu">
                     <span class="btn-icon">🏆</span><span class="btn-text">CONQUISTAS</span>
                 </button>
@@ -69,6 +77,7 @@
                 <button class="menu-btn" id="btn-learn-more">
                     <span class="btn-icon">📚</span><span class="btn-text">APRENDA MAIS</span>
                 </button>
+                <div class="menu-divider"></div>
                 <button class="menu-btn" id="btn-settings">
                     <span class="btn-icon">⚙</span><span class="btn-text">CONFIGURAÇÕES</span>
                 </button>
@@ -76,6 +85,7 @@
                     <span class="btn-icon">ℹ️</span><span class="btn-text">SOBRE O JOGO</span>
                 </button>
             </nav>
+            <p class="menu-footer">Por Trás da Tela · v1.0 · Ficção interativa educativa</p>
         </div>
     </div>
 
