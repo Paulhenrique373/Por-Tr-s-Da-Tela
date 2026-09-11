@@ -100,7 +100,7 @@ const SynthAudio = {
 const gameState = {
     playerName: 'Alex',
     playerAvatar: '🧑',
-    playerPronoun: 'neutro',
+    playerPronoun: 'masculino',
     chapter: 1,
     scene: 0,
     security: 50,
@@ -202,10 +202,9 @@ function getCurrentScene() {
     return chapter ? (chapter.scenes[gameState.scene] || null) : null;
 }
 
-function getPronounText(masc, fem, neutro) {
+function getPronounText(masc, fem) {
     if (gameState.playerPronoun === 'masculino') return masc;
-    if (gameState.playerPronoun === 'feminino') return fem;
-    return neutro;
+    return fem;
 }
 
 // ============================================
@@ -1336,6 +1335,17 @@ function renderNarrativeScene(scene) {
     if (scene.actionStat) gameState.actionStats[scene.actionStat] = (gameState.actionStats[scene.actionStat]||0)+1;
 }
 
+// Impede que, depois de escolhida uma opção, as outras do mesmo grupo ainda
+// possam ser clicadas (o que antes deixava o jogo "escolher" mais de uma opção
+// na mesma cena). Trava todos os botões do grupo e destaca o escolhido.
+function lockChoiceButtons(container, chosenBtn) {
+    if (!container) return;
+    container.querySelectorAll('button').forEach(b => {
+        b.disabled = true;
+        b.classList.add(b === chosenBtn ? 'choice-selected' : 'choice-locked');
+    });
+}
+
 function renderChoices(choices) {
     if (!DOM['choices-container']) return;
     DOM['choices-container'].innerHTML = '';
@@ -1347,7 +1357,10 @@ function renderChoices(choices) {
         btn.innerHTML = ch.letter
             ? `<span class="choice-letter">${ch.letter}</span><span class="choice-text">${ch.text}</span>`
             : `<span class="choice-text">${ch.text}</span>`;
-        btn.addEventListener('click', () => handleChoice(ch, i));
+        btn.addEventListener('click', () => {
+            lockChoiceButtons(DOM['choices-container'], btn);
+            handleChoice(ch, i);
+        });
         DOM['choices-container'].appendChild(btn);
     });
 }
@@ -1407,6 +1420,7 @@ function renderPhoneScene(scene, tab) {
         if (tab === 'messages') playTypingReveal(scene);
         DOM['phone-screen'].querySelectorAll('.phone-choice-btn').forEach(btn => {
             btn.addEventListener('click', () => {
+                lockChoiceButtons(btn.closest('.phone-choices'), btn);
                 handleChoice(scene.choices[parseInt(btn.dataset.ci)], parseInt(btn.dataset.ci));
             });
         });
@@ -1725,13 +1739,26 @@ function renderInvestigationScene(scene) {
     const board = DOM['evidence-board'];
     if (!board) return;
     board.innerHTML = '';
-    const foundItems = [];
-    
+    // Evidências já coletadas antes (ex.: ao reabrir/re-renderizar a cena) continuam
+    // marcadas como encontradas, em vez de "esquecer" o progresso do jogador.
+    const foundItems = (scene.evidenceItems||[]).filter(it => !it.isFalseLead && gameState.evidence.includes(it.id)).map(it => it.id);
+
     (scene.evidenceItems||[]).forEach(item => {
         const card = document.createElement('div');
         card.className = 'evidence-card';
-        card.innerHTML = `<span class="ev-icon">${item.icon}</span><span class="ev-label">${item.label}</span>`;
-        
+        const alreadyFound = !item.isFalseLead && gameState.evidence.includes(item.id);
+
+        if (alreadyFound) {
+            card.classList.add('found');
+            card.innerHTML = `
+                <span class="ev-icon">${item.icon}</span>
+                <span class="ev-label" style="color:var(--green)">${item.label}</span>
+                <p style="font-size:11px;color:#D1D5DB;margin-top:6px;line-height:1.4">${item.detail}</p>
+            `;
+        } else {
+            card.innerHTML = `<span class="ev-icon">${item.icon}</span><span class="ev-label">${item.label}</span>`;
+        }
+
         card.addEventListener('click', () => {
             if (!card.classList.contains('found') && !card.classList.contains('false-lead')) {
                 if (item.isFalseLead) {
@@ -1747,7 +1774,8 @@ function renderInvestigationScene(scene) {
                     foundItems.push(item.id);
                     showEvidenceToast(item.label);
                     gameState.actionStats.evidenceFound = (gameState.actionStats.evidenceFound||0)+1;
-                    
+                    addEvidence(item.id); // registra no inventário global (celular, conquistas, certificado)
+
                     card.innerHTML = `
                         <span class="ev-icon">${item.icon}</span>
                         <span class="ev-label" style="color:var(--green)">${item.label}</span>
@@ -1786,7 +1814,10 @@ function renderInvestigationScene(scene) {
             const btn = document.createElement('button');
             btn.className = 'choice-btn';
             btn.innerHTML = `<span class="choice-letter">${ch.letter}</span><span class="choice-text">${ch.text}</span>`;
-            btn.addEventListener('click', () => handleChoice(ch, i));
+            btn.addEventListener('click', () => {
+                lockChoiceButtons(choicesEl, btn);
+                handleChoice(ch, i);
+            });
             choicesEl.appendChild(btn);
         });
     }
@@ -2070,10 +2101,13 @@ function open1on1Chat(charId) {
 
     if (DOM['hub-chat-content']) DOM['hub-chat-content'].innerHTML = chatHtml;
 
+    // Se qualquer uma das respostas dessa conversa já foi enviada antes, a conversa
+    // inteira conta como respondida — as duas opções aparecem travadas ao reabrir,
+    // em vez de deixar a segunda ainda disponível para "resposta dupla".
+    const chatAnswered = replyOptions.some(opt => gameState.chatRepliesUsed[opt.id]);
     let inputHtml = '<div class="hub-chat-input-title">Sua Resposta:</div>';
     replyOptions.forEach(opt => {
-        const used = gameState.chatRepliesUsed[opt.id];
-        inputHtml += `<button class="hub-chat-reply-btn ${used ? 'used' : ''}" data-reply-id="${opt.id}">${opt.text}</button>`;
+        inputHtml += `<button class="hub-chat-reply-btn ${chatAnswered ? 'used' : ''}" data-reply-id="${opt.id}">${opt.text}</button>`;
     });
 
     if (DOM['hub-chat-input-area']) {
@@ -2082,16 +2116,18 @@ function open1on1Chat(charId) {
         DOM['hub-chat-input-area'].querySelectorAll('.hub-chat-reply-btn').forEach((btn, idx) => {
             btn.addEventListener('click', () => {
                 const opt = replyOptions[idx];
-                if (gameState.chatRepliesUsed[opt.id]) return;
+                // Uma resposta escolhida trava as demais opções da mesma conversa.
+                if (DOM['hub-chat-input-area'].querySelector('.hub-chat-reply-btn.used')) return;
 
                 gameState.chatRepliesUsed[opt.id] = true;
-                btn.classList.add('used');
+                DOM['hub-chat-input-area'].querySelectorAll('.hub-chat-reply-btn').forEach(b => b.classList.add('used'));
 
                 // Adiciona bolha do jogador
                 const playerBubble = document.createElement('div');
                 playerBubble.className = 'hub-chat-msg own';
                 playerBubble.innerHTML = `<div class="hub-chat-msg-avatar">${gameState.playerAvatar}</div><div class="hub-chat-msg-bubble">${opt.text}</div>`;
                 DOM['hub-chat-content'].appendChild(playerBubble);
+                DOM['hub-chat-content'].scrollTop = DOM['hub-chat-content'].scrollHeight;
 
                 if (opt.rel) applyRelEffects(opt.rel);
                 SynthAudio.playSFX('click');
@@ -2511,7 +2547,7 @@ function continueGame() {
     Object.assign(gameState, {
         playerName: saved.playerName || 'Alex',
         playerAvatar: saved.playerAvatar || '🧑',
-        playerPronoun: saved.playerPronoun || 'neutro',
+        playerPronoun: saved.playerPronoun === 'feminino' ? 'feminino' : 'masculino',
         chapter: saved.chapter || 1, scene: saved.scene || 0,
         security: saved.security ?? 50, empathy: saved.empathy ?? 50,
         courage: saved.courage ?? 50, trust: saved.trust ?? 50,

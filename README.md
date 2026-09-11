@@ -70,7 +70,6 @@ Melhorias implementadas em cima da base já existente, sem remover capítulos, p
 - **Sistema de pistas conectadas** na investigação: feedback textual ("Você encontrou uma conexão...", "...uma inconsistência") ao reunir evidências.
 - **Modal de denúncia com categorias** (Cyberbullying, Assédio, Conteúdo impróprio, Spam, Golpe, Outro) no Conecta — antes era um clique único sem contexto.
 - **Correção de bug**: os botões de curtir/denunciar do Conecta não funcionavam quando abertos pelo Hub (só funcionavam na cena de celular); agora funcionam nos dois lugares.
-- **Correção de bug**: a tela de criação de personagem não tinha a opção de pronome "Elu/Delu", embora fosse o padrão interno do jogo.
+- **Personalização simplificada**: a tela de criação de personagem oferece quatro avatares e as opções “Ele/Dele” e “Ela/Dela”.
 - **Acessibilidade**: novos controles em Configurações — Reduzir Movimento (+ respeito a `prefers-reduced-motion` do sistema), Alto Contraste, Tamanho do Texto (normal/grande/muito grande).
 - **Limpeza de código**: remoção de 3 referências a ids inexistentes no cache do DOM (dead code sem efeito funcional).
-
