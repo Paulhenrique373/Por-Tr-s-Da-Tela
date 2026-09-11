@@ -59,3 +59,18 @@ Todos os nomes de personagens e situações no jogo são fictícios, criados ape
 ## Aviso sobre o CDN externo
 
 O botão "Baixar certificado" depende de carregar `html2canvas` a partir do `cdnjs.cloudflare.com`. Se for hospedar o jogo num ambiente sem acesso à internet (ex: rede interna da escola sem esse domínio liberado), essa função específica não vai funcionar — o restante do jogo continua 100% funcional offline.
+
+## Changelog — v2.0
+
+Melhorias implementadas em cima da base já existente, sem remover capítulos, personagens, finais, save, celular, investigação, conquistas ou certificado:
+
+- **Save com versão e migração** (`SaveSystem.VERSION` + `migrate()`): saves de versões antigas não são mais descartados, só têm os campos que faltam preenchidos.
+- **Introdução cinematográfica** antes do Capítulo 1 (frases em sequência + logo do jogo), com botão "Pular".
+- **Indicador "digitando..."** no chat do celular antes da última mensagem de cada conversa aparecer.
+- **Sistema de pistas conectadas** na investigação: feedback textual ("Você encontrou uma conexão...", "...uma inconsistência") ao reunir evidências.
+- **Modal de denúncia com categorias** (Cyberbullying, Assédio, Conteúdo impróprio, Spam, Golpe, Outro) no Conecta — antes era um clique único sem contexto.
+- **Correção de bug**: os botões de curtir/denunciar do Conecta não funcionavam quando abertos pelo Hub (só funcionavam na cena de celular); agora funcionam nos dois lugares.
+- **Correção de bug**: a tela de criação de personagem não tinha a opção de pronome "Elu/Delu", embora fosse o padrão interno do jogo.
+- **Acessibilidade**: novos controles em Configurações — Reduzir Movimento (+ respeito a `prefers-reduced-motion` do sistema), Alto Contraste, Tamanho do Texto (normal/grande/muito grande).
+- **Limpeza de código**: remoção de 3 referências a ids inexistentes no cache do DOM (dead code sem efeito funcional).
+

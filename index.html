@@ -85,7 +85,7 @@
                     <span class="btn-icon">ℹ️</span><span class="btn-text">SOBRE O JOGO</span>
                 </button>
             </nav>
-            <p class="menu-footer">Por Trás da Tela · v1.0 · Ficção interativa educativa</p>
+            <p class="menu-footer">Por Trás da Tela · v2.0 · Ficção interativa educativa</p>
         </div>
     </div>
 
@@ -119,8 +119,9 @@
                 <div class="setup-section">
                     <label class="setup-label">Como prefere ser chamado?</label>
                     <div class="pronoun-options">
-                        <button class="pronoun-btn selected" data-pronoun="masculino">Ele/Dele</button>
+                        <button class="pronoun-btn" data-pronoun="masculino">Ele/Dele</button>
                         <button class="pronoun-btn" data-pronoun="feminino">Ela/Dela</button>
+                        <button class="pronoun-btn selected" data-pronoun="neutro">Elu/Delu</button>
                     </div>
                 </div>
                 <div class="setup-actions">
@@ -131,6 +132,18 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- INTRODUÇÃO CINEMATOGRÁFICA (v2.0) -->
+    <div id="intro-cinematic-screen" class="screen intro-cinematic-screen">
+        <div class="intro-cinematic-content">
+            <p class="intro-line" id="intro-line"></p>
+            <div class="intro-title-wrap" id="intro-title-wrap" style="display:none">
+                <h1 class="intro-title">POR TRÁS DA TELA</h1>
+                <p class="intro-subtitle">"Toda escolha deixa uma marca."</p>
+            </div>
+        </div>
+        <button class="intro-skip-btn" id="btn-skip-intro" aria-label="Pular introdução">Pular ▸</button>
     </div>
 
     <!-- SETTINGS -->
@@ -166,6 +179,25 @@
                         <option value="instant">Instantâneo</option>
                     </select>
                 </div>
+                <div class="settings-divider"><span>♿ Acessibilidade</span></div>
+                <div class="setting-item">
+                    <div class="setting-info"><span class="setting-icon">🐢</span><span class="setting-label">Reduzir Movimento</span></div>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-reduced-motion" aria-describedby="a11y-hint-motion"><span class="toggle-slider"></span></label>
+                </div>
+                <p class="setup-hint" id="a11y-hint-motion">Diminui/remove efeitos visuais não essenciais (glitches, brilhos, partículas).</p>
+                <div class="setting-item">
+                    <div class="setting-info"><span class="setting-icon">◐</span><span class="setting-label">Alto Contraste</span></div>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-high-contrast"><span class="toggle-slider"></span></label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info"><span class="setting-icon">🔠</span><span class="setting-label">Tamanho do Texto</span></div>
+                    <select id="text-size" class="setting-select" aria-label="Tamanho do texto">
+                        <option value="normal" selected>Normal</option>
+                        <option value="large">Grande</option>
+                        <option value="xlarge">Muito Grande</option>
+                    </select>
+                </div>
+                <div class="settings-divider"><span>💾 Progresso</span></div>
                 <div class="setting-item">
                     <div class="setting-info"><span class="setting-icon">💾</span><span class="setting-label">Backup do Progresso</span></div>
                 </div>
@@ -510,6 +542,16 @@
         </div>
     </div>
 
+    <!-- Modal de Denúncia (v2.0) -->
+    <div id="report-modal" class="overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Denunciar publicação">
+        <div class="post-modal-card">
+            <h3>🚨 Denunciar publicação</h3>
+            <p class="post-modal-desc">Por que você está denunciando este conteúdo?</p>
+            <div class="report-options" id="report-options"></div>
+            <button class="tip-btn" id="btn-close-report-modal" style="margin-top:14px;width:100%" aria-label="Cancelar denúncia">Cancelar</button>
+        </div>
+    </div>
+
     <!-- TRANSITION -->
     <div id="chapter-transition" class="screen">
         <div class="transition-content">
@@ -552,6 +594,13 @@
     </div>
     <div id="share-toast" class="share-toast" style="display:none;">
         <span>✅ Resultado copiado!</span>
+    </div>
+    <div id="connection-toast" class="evidence-toast connection-toast" style="display:none;">
+        <div class="evidence-toast-icon">🧩</div>
+        <div class="evidence-toast-info">
+            <span class="evidence-toast-label">INVESTIGAÇÃO</span>
+            <span class="evidence-toast-name" id="connection-toast-text"></span>
+        </div>
     </div>
 
     <!-- RESULT COM CERTIFICADO -->

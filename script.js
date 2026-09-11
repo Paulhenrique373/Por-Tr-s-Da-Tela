@@ -138,7 +138,10 @@ const settings = {
     sfx: true,
     volume: 50,
     animations: true,
-    textSpeed: 'normal'
+    textSpeed: 'normal',
+    reducedMotion: false,   // v2.0: acessibilidade — reduz/some com animações não essenciais
+    highContrast: false,    // v2.0: acessibilidade — aumenta contraste de texto e bordas
+    textSize: 'normal'      // v2.0: acessibilidade — 'normal' | 'large' | 'xlarge'
 };
 
 // ============================================
@@ -835,6 +838,7 @@ function cacheDom() {
         'pgrel-rafael','pgrel-bia','pgrel-lucas','pgrelv-rafael','pgrelv-bia','pgrelv-lucas',
         'btn-learn-more','btn-settings','btn-about',
         'btn-settings-back','toggle-music','toggle-sfx','volume-slider','toggle-animations','text-speed','btn-clear-data',
+        'toggle-reduced-motion','toggle-high-contrast','text-size',
         'btn-about-back','btn-achievements-back','btn-learn-back','btn-setup-back','btn-start-game',
         'input-player-name','avatar-grid',
         'achievements-grid',
@@ -851,7 +855,7 @@ function cacheDom() {
         'sidebar-evidence','sidebar-achievements-list',
         'btn-save-game','btn-back-menu',
         'hub-completed','hub-phone-btn','hub-evidence-btn','hub-relationships-btn','hub-continue-btn','hub-next-chapter-desc','hub-phone-badge',
-        'hub-phone-panel','hub-phone-title','hub-phone-content','hub-chat-panel','hub-chat-title','hub-chat-content','hub-chat-input-area',
+        'hub-phone-panel','hub-phone-content','hub-chat-panel','hub-chat-title','hub-chat-content','hub-chat-input-area',
         'hub-evidence-panel','hub-evidence-content','hub-relationships-panel','hub-relationships-content',
         'transition-chapter-num','transition-title','transition-desc',
         'tip-overlay','tip-text','btn-close-tip',
@@ -861,16 +865,19 @@ function cacheDom() {
         'rel-toast','rel-toast-avatar','rel-toast-text','share-toast',
         'result-emoji','result-header','result-title','result-subtitle',
         'certificate',
-        'result-profile-card','profile-badge-icon','profile-title','profile-desc',
+        'profile-badge-icon','profile-title','profile-desc',
         'rs-security','rs-empathy','rs-courage','rs-trust','rsv-security','rsv-empathy','rsv-courage','rsv-trust',
-        'result-action-stats','action-stats-grid',
+        'action-stats-grid',
         'result-decisions-list','result-achievements-list','result-message',
         'btn-play-again','btn-share-result','btn-result-menu',
         'confirm-modal','confirm-title','confirm-text','confirm-cancel','confirm-accept',
         'scene-image-container',
         'phone-nav-messages','phone-nav-conecta','phone-nav-notifications','phone-nav-evidence',
         'post-modal','post-options','btn-close-post-modal',
-        'btn-export-save','btn-import-save','input-import-save','btn-download-cert'
+        'btn-export-save','btn-import-save','input-import-save','btn-download-cert',
+        'connection-toast','connection-toast-text',
+        'intro-cinematic-screen','intro-line','intro-title-wrap','btn-skip-intro',
+        'report-modal','report-options','btn-close-report-modal'
     ];
     ids.forEach(id => { DOM[id] = document.getElementById(id); });
 }
@@ -881,9 +888,11 @@ function cacheDom() {
 const SaveSystem = {
     KEY: 'por_tras_da_tela_save_v5',
     SKEY: 'por_tras_da_tela_settings_v5',
+    VERSION: 2, // v2.0: incrementar sempre que a forma do save mudar. migrate() cuida de saves antigos.
     save() {
         try {
             localStorage.setItem(this.KEY, JSON.stringify({
+                saveVersion: this.VERSION,
                 playerName: gameState.playerName,
                 playerAvatar: gameState.playerAvatar,
                 playerPronoun: gameState.playerPronoun,
@@ -906,7 +915,26 @@ const SaveSystem = {
         } catch(e) { return false; }
     },
     load() {
-        try { const r = localStorage.getItem(this.KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+        try {
+            const r = localStorage.getItem(this.KEY);
+            if (!r) return null;
+            return this.migrate(JSON.parse(r));
+        } catch(e) { return null; }
+    },
+    // Migra saves de versões anteriores em vez de descartá-los. Sempre devolve um
+    // objeto com todos os campos que o jogo atual espera, preenchendo o que faltar.
+    migrate(data) {
+        if (!data || typeof data !== 'object') return null;
+        const fromVersion = data.saveVersion || 1; // saves antigos (v1.x) não tinham saveVersion
+        if (fromVersion < 2) {
+            // v1 -> v2: campos novos que podem não existir em saves antigos
+            if (!data.postsMade) data.postsMade = {};
+            if (!data.endingsUnlocked) data.endingsUnlocked = [];
+            if (!data.chatRepliesUsed) data.chatRepliesUsed = {};
+            if (!data.actionStats) data.actionStats = { reports: 0, peopleHelped: 0, evidenceFound: 0, contentNotShared: 0 };
+        }
+        data.saveVersion = this.VERSION;
+        return data;
     },
     hasSave() { return !!localStorage.getItem(this.KEY); },
     clear() { localStorage.removeItem(this.KEY); },
@@ -942,7 +970,8 @@ const SaveSystem = {
             if (!data || typeof data !== 'object' || typeof data.playerName === 'undefined') {
                 throw new Error('formato inválido');
             }
-            localStorage.setItem(this.KEY, JSON.stringify(data));
+            const migrated = this.migrate(data);
+            localStorage.setItem(this.KEY, JSON.stringify(migrated));
             return true;
         } catch(e) { return false; }
     }
@@ -988,6 +1017,25 @@ function showRelToast(charId, value) {
     void el.offsetWidth;
     el.style.animation = 'slideInLeft .3s ease, fadeOut .4s ease 2s forwards';
     setTimeout(() => { el.style.display = 'none'; }, 2800);
+}
+
+// v2.0: feedback de "pistas conectadas" durante a investigação — reforça a
+// sensação de que o jogador está juntando peças, e não só coletando itens soltos.
+const CONNECTION_MESSAGES = [
+    'Você encontrou uma conexão entre as pistas.',
+    'Essa informação pode ser importante para o caso.',
+    'Você percebeu uma inconsistência na história de alguém.'
+];
+function showConnectionToast(text) {
+    const el = DOM['connection-toast'];
+    if (!el) return;
+    if (DOM['connection-toast-text']) DOM['connection-toast-text'].textContent = text;
+    el.style.display = 'flex';
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = 'fadeInUp .4s ease, fadeOut .4s ease 3s forwards';
+    SynthAudio.playSFX('notif');
+    setTimeout(() => { el.style.display = 'none'; }, 3600);
 }
 
 function showShareToast() {
@@ -1356,44 +1404,100 @@ function renderPhoneScene(scene, tab) {
 
     if (DOM['phone-screen']) {
         DOM['phone-screen'].innerHTML = html;
+        if (tab === 'messages') playTypingReveal(scene);
         DOM['phone-screen'].querySelectorAll('.phone-choice-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 handleChoice(scene.choices[parseInt(btn.dataset.ci)], parseInt(btn.dataset.ci));
             });
         });
 
-        DOM['phone-screen'].querySelectorAll('.conecta-action').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const action = btn.dataset.action;
-                if (action === 'like') {
-                    btn.classList.toggle('liked');
-                    const span = btn.querySelector('span');
-                    if (btn.classList.contains('liked')) {
-                        span.textContent = parseInt(span.textContent) + 1;
-                        SynthAudio.playSFX('click');
-                    } else {
-                        span.textContent = parseInt(span.textContent) - 1;
-                    }
-                } else if (action === 'report') {
-                    if (!btn.classList.contains('reported')) {
-                        btn.classList.add('reported');
-                        btn.querySelector('span').textContent = 'Denunciado';
-                        showStatToast('🚨 Denúncia registrada', 1);
-                        gameState.actionStats.reports++;
-                        SynthAudio.playSFX('notif');
-                        if (gameState.actionStats.reports >= 2) unlockAchievement('redeDeApoio');
-                    }
-                }
-            });
-        });
+        bindConectaActions(DOM['phone-screen']);
     }
+}
+
+// Botões de curtir/denunciar do Conecta aparecem tanto na cena de celular quanto no
+// hub (aba Conecta) — centralizado aqui para os dois lugares ficarem funcionais.
+function bindConectaActions(container) {
+    if (!container) return;
+    container.querySelectorAll('.conecta-action').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const action = btn.dataset.action;
+            if (action === 'like') {
+                btn.classList.toggle('liked');
+                const span = btn.querySelector('span');
+                if (btn.classList.contains('liked')) {
+                    span.textContent = parseInt(span.textContent) + 1;
+                    SynthAudio.playSFX('click');
+                } else {
+                    span.textContent = parseInt(span.textContent) - 1;
+                }
+            } else if (action === 'report') {
+                if (!btn.classList.contains('reported')) {
+                    openReportModal(btn);
+                }
+            }
+        });
+    });
+}
+
+// ============================================
+// MODAL DE DENÚNCIA (v2.0)
+// ============================================
+const REPORT_CATEGORIES = [
+    { id: 'bullying', icon: '😢', label: 'Cyberbullying' },
+    { id: 'harassment', icon: '⚠️', label: 'Assédio' },
+    { id: 'inappropriate', icon: '🔞', label: 'Conteúdo impróprio' },
+    { id: 'spam', icon: '📢', label: 'Spam' },
+    { id: 'scam', icon: '💰', label: 'Golpe' },
+    { id: 'other', icon: '❓', label: 'Outro' }
+];
+let pendingReportBtn = null;
+
+function openReportModal(btn) {
+    pendingReportBtn = btn;
+    const container = DOM['report-options'];
+    if (!container) return;
+    container.innerHTML = '';
+    REPORT_CATEGORIES.forEach(cat => {
+        const opt = document.createElement('button');
+        opt.className = 'post-option-btn';
+        opt.innerHTML = `<span class="post-option-preview">${cat.icon} ${cat.label}</span>`;
+        opt.addEventListener('click', () => confirmReport(cat));
+        container.appendChild(opt);
+    });
+    if (DOM['report-modal']) DOM['report-modal'].style.display = 'flex';
+}
+
+function closeReportModal() {
+    if (DOM['report-modal']) DOM['report-modal'].style.display = 'none';
+    pendingReportBtn = null;
+}
+
+function confirmReport(category) {
+    const btn = pendingReportBtn;
+    closeReportModal();
+    if (!btn || btn.classList.contains('reported')) return;
+    btn.classList.add('reported');
+    const span = btn.querySelector('span');
+    if (span) span.textContent = 'Denunciado';
+    showStatToast(`🚨 Denúncia enviada (${category.label})`, 1);
+    gameState.actionStats.reports++;
+    SynthAudio.playSFX('notif');
+    if (gameState.actionStats.reports >= 2) unlockAchievement('redeDeApoio');
+    SaveSystem.save();
 }
 
 function renderPhoneChat(scene) {
     let h = `<div class="phone-app-header"><span style="font-size:16px">←</span><span class="phone-app-name">${scene.appName||'💬 Chat'}</span></div>`;
-    (scene.messages||[]).forEach((m,i) => {
+    const msgs = scene.messages || [];
+    const lastIdx = msgs.length - 1;
+    // v2.0: a última mensagem do grupo só aparece depois de um indicador "digitando...",
+    // dando a sensação de mensagem chegando em tempo real (uma vez por cena/partida).
+    const showTyping = settings.animations && !scene._chatIntroPlayed && lastIdx >= 0;
+    msgs.forEach((m,i) => {
         const off = m.offensive ? ' offensive' : '';
-        h += `<div class="phone-message" style="animation-delay:${i*.12}s">
+        const pending = (showTyping && i === lastIdx) ? ' phone-msg-pending' : '';
+        h += `<div class="phone-message${pending}" style="animation-delay:${i*.12}s">
                 <div class="phone-msg-avatar">${m.avatar}</div>
                 <div class="phone-msg-body">
                     <div class="phone-msg-name">${m.name}</div>
@@ -1402,7 +1506,28 @@ function renderPhoneChat(scene) {
                 </div>
               </div>`;
     });
+    if (showTyping) {
+        const last = msgs[lastIdx];
+        h += `<div class="phone-typing-indicator" id="phone-typing-indicator">
+                <div class="phone-msg-avatar">${last.avatar}</div>
+                <div class="typing-dots"><span></span><span></span><span></span></div>
+              </div>`;
+    }
     return h;
+}
+
+// Revela a última mensagem pendente depois do indicador "digitando...", tocando
+// um som de notificação. Chamado uma vez por cena de chat (renderPhoneScene).
+function playTypingReveal(scene) {
+    const indicator = document.getElementById('phone-typing-indicator');
+    const pending = DOM['phone-screen'] ? DOM['phone-screen'].querySelector('.phone-msg-pending') : null;
+    if (!indicator || !pending) { if (scene) scene._chatIntroPlayed = true; return; }
+    setTimeout(() => {
+        if (indicator.parentNode) indicator.remove();
+        pending.classList.remove('phone-msg-pending');
+        SynthAudio.playSFX('notif');
+        scene._chatIntroPlayed = true;
+    }, 1100);
 }
 
 function renderPhoneConecta(scene) {
@@ -1629,6 +1754,19 @@ function renderInvestigationScene(scene) {
                         <p style="font-size:11px;color:#D1D5DB;margin-top:6px;line-height:1.4">${item.detail}</p>
                     `;
                     updateInvestigationList(scene.evidenceItems, foundItems);
+
+                    // v2.0: feedback de conexão de pistas — mostra ao encontrar a 2ª pista real,
+                    // e uma mensagem de fechamento ao reunir todas as pistas verdadeiras da cena.
+                    const realItemsTotal = (scene.evidenceItems||[]).filter(it => !it.isFalseLead).length;
+                    setTimeout(() => {
+                        if (foundItems.length === 2 && realItemsTotal > 2) {
+                            showConnectionToast(CONNECTION_MESSAGES[0]);
+                        } else if (foundItems.length === realItemsTotal && realItemsTotal > 0) {
+                            showConnectionToast(CONNECTION_MESSAGES[2]);
+                        } else if (foundItems.length >= 1 && realItemsTotal <= 2 && foundItems.length < realItemsTotal) {
+                            showConnectionToast(CONNECTION_MESSAGES[1]);
+                        }
+                    }, 3300); // depois do toast de evidência sumir, pra não sobrepor
                 }
             }
         });
@@ -1851,6 +1989,8 @@ function renderHubPhonePanel() {
                 open1on1Chat(contact);
             });
         });
+
+        if (activeHubTab === 'conecta') bindConectaActions(DOM['hub-phone-content']);
     }
 }
 
@@ -2293,6 +2433,53 @@ function openPlayerSetup() {
     showScreen('player-setup-screen');
 }
 
+// ============================================
+// INTRODUÇÃO CINEMATOGRÁFICA — v2.0
+// Uma sequência curta de frases antes do Capítulo 1, terminando no logo do jogo.
+// ============================================
+const INTRO_LINES = ['Uma mensagem.', 'Um comentário.', 'Uma publicação.', 'Uma escolha.', 'Uma consequência.'];
+function runIntroCinematic(onDone) {
+    showScreen('intro-cinematic-screen');
+    if (DOM['intro-title-wrap']) DOM['intro-title-wrap'].style.display = 'none';
+    if (DOM['intro-line']) { DOM['intro-line'].textContent = ''; DOM['intro-line'].classList.remove('show'); }
+
+    let finished = false;
+    const finish = () => {
+        if (finished) return;
+        finished = true;
+        if (skipBtn) skipBtn.removeEventListener('click', finish);
+        onDone();
+    };
+    const skipBtn = DOM['btn-skip-intro'];
+    if (skipBtn) skipBtn.addEventListener('click', finish);
+
+    // Sem animações / movimento reduzido: pula direto para o título, sem esperar.
+    if (!settings.animations || settings.reducedMotion) {
+        if (DOM['intro-title-wrap']) DOM['intro-title-wrap'].style.display = 'block';
+        setTimeout(finish, 900);
+        return;
+    }
+
+    const lineDuration = 1500;
+    INTRO_LINES.forEach((line, i) => {
+        setTimeout(() => {
+            if (finished || !DOM['intro-line']) return;
+            DOM['intro-line'].textContent = line;
+            DOM['intro-line'].classList.remove('show');
+            void DOM['intro-line'].offsetWidth;
+            DOM['intro-line'].classList.add('show');
+            SynthAudio.playSFX('notif');
+        }, i * lineDuration);
+    });
+    setTimeout(() => {
+        if (finished) return;
+        if (DOM['intro-line']) DOM['intro-line'].textContent = '';
+        if (DOM['intro-title-wrap']) DOM['intro-title-wrap'].style.display = 'block';
+        SynthAudio.playSFX('chapter');
+    }, INTRO_LINES.length * lineDuration);
+    setTimeout(finish, INTRO_LINES.length * lineDuration + 2200);
+}
+
 function startNewGame() {
     const inputName = DOM['input-player-name'] ? DOM['input-player-name'].value.trim() : 'Alex';
     gameState.playerName = inputName || 'Alex';
@@ -2300,19 +2487,23 @@ function startNewGame() {
     resetState(); 
     updateAllUI(); 
     SaveSystem.save();
-    
-    const ch = chapters[0];
-    if (DOM['transition-chapter-num']) DOM['transition-chapter-num'].textContent = `Capítulo ${ch.id}`;
-    if (DOM['transition-title']) DOM['transition-title'].textContent = ch.title;
-    if (DOM['transition-desc']) DOM['transition-desc'].textContent = ch.desc;
-    
-    showScreen('chapter-transition');
-    SynthAudio.startAmbientMusic();
-    
-    setTimeout(() => { 
-        showScreen('game-screen'); 
-        renderScene(); 
-    }, 3000);
+
+    const beginChapterOne = () => {
+        const ch = chapters[0];
+        if (DOM['transition-chapter-num']) DOM['transition-chapter-num'].textContent = `Capítulo ${ch.id}`;
+        if (DOM['transition-title']) DOM['transition-title'].textContent = ch.title;
+        if (DOM['transition-desc']) DOM['transition-desc'].textContent = ch.desc;
+
+        showScreen('chapter-transition');
+        SynthAudio.startAmbientMusic();
+
+        setTimeout(() => {
+            showScreen('game-screen');
+            renderScene();
+        }, 3000);
+    };
+
+    runIntroCinematic(beginChapterOne);
 }
 
 function continueGame() {
@@ -2321,9 +2512,9 @@ function continueGame() {
         playerName: saved.playerName || 'Alex',
         playerAvatar: saved.playerAvatar || '🧑',
         playerPronoun: saved.playerPronoun || 'neutro',
-        chapter: saved.chapter, scene: saved.scene,
-        security: saved.security, empathy: saved.empathy,
-        courage: saved.courage, trust: saved.trust,
+        chapter: saved.chapter || 1, scene: saved.scene || 0,
+        security: saved.security ?? 50, empathy: saved.empathy ?? 50,
+        courage: saved.courage ?? 50, trust: saved.trust ?? 50,
         choices: saved.choices||[], achievements: saved.achievements||[],
         choiceFlags: saved.choiceFlags||{},
         relationships: saved.relationships||{rafael:50,bia:60,lucas:50},
@@ -2431,8 +2622,19 @@ function applySettings() {
     if (DOM['volume-slider']) DOM['volume-slider'].value = settings.volume || 50;
     if (DOM['toggle-animations']) DOM['toggle-animations'].checked = settings.animations;
     if (DOM['text-speed']) DOM['text-speed'].value = settings.textSpeed || 'normal';
+    if (DOM['toggle-reduced-motion']) DOM['toggle-reduced-motion'].checked = settings.reducedMotion;
+    if (DOM['toggle-high-contrast']) DOM['toggle-high-contrast'].checked = settings.highContrast;
+    if (DOM['text-size']) DOM['text-size'].value = settings.textSize || 'normal';
+
     document.body.classList.toggle('no-animations', !settings.animations);
-    
+    // Respeita também a preferência do sistema operacional, além do toggle manual
+    const systemReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.body.classList.toggle('reduce-motion', settings.reducedMotion || systemReducedMotion);
+    document.body.classList.toggle('high-contrast', settings.highContrast);
+    document.body.classList.remove('text-size-large', 'text-size-xlarge');
+    if (settings.textSize === 'large') document.body.classList.add('text-size-large');
+    if (settings.textSize === 'xlarge') document.body.classList.add('text-size-xlarge');
+
     if (settings.music) SynthAudio.startAmbientMusic();
     else SynthAudio.stopMusic();
 }
@@ -2577,6 +2779,30 @@ function setupEvents() {
             SaveSystem.saveSettings(); 
         });
     }
+
+    if (DOM['toggle-reduced-motion']) {
+        DOM['toggle-reduced-motion'].addEventListener('change', () => {
+            settings.reducedMotion = DOM['toggle-reduced-motion'].checked;
+            applySettings();
+            SaveSystem.saveSettings();
+        });
+    }
+
+    if (DOM['toggle-high-contrast']) {
+        DOM['toggle-high-contrast'].addEventListener('change', () => {
+            settings.highContrast = DOM['toggle-high-contrast'].checked;
+            applySettings();
+            SaveSystem.saveSettings();
+        });
+    }
+
+    if (DOM['text-size']) {
+        DOM['text-size'].addEventListener('change', () => {
+            settings.textSize = DOM['text-size'].value;
+            applySettings();
+            SaveSystem.saveSettings();
+        });
+    }
     
     if (DOM['btn-clear-data']) {
         DOM['btn-clear-data'].addEventListener('click', () => {
@@ -2671,6 +2897,10 @@ function setupEvents() {
     if (DOM['post-modal']) {
         DOM['post-modal'].addEventListener('click', (e) => { if (e.target === DOM['post-modal']) closePostModal(); });
     }
+    if (DOM['btn-close-report-modal']) DOM['btn-close-report-modal'].addEventListener('click', closeReportModal);
+    if (DOM['report-modal']) {
+        DOM['report-modal'].addEventListener('click', (e) => { if (e.target === DOM['report-modal']) closeReportModal(); });
+    }
 
     document.addEventListener('keydown', e => {
         const isGameActive = DOM['game-screen'] && DOM['game-screen'].classList.contains('active');
@@ -2698,9 +2928,12 @@ function setupEvents() {
 
     // Acessibilidade: Esc fecha o modal de confirmação em qualquer tela (não só durante o jogo)
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && DOM['confirm-modal'] && DOM['confirm-modal'].style.display === 'flex') {
+        if (e.key !== 'Escape') return;
+        if (DOM['confirm-modal'] && DOM['confirm-modal'].style.display === 'flex') {
             if (DOM['confirm-cancel']) DOM['confirm-cancel'].click();
         }
+        if (DOM['post-modal'] && DOM['post-modal'].style.display === 'flex') closePostModal();
+        if (DOM['report-modal'] && DOM['report-modal'].style.display === 'flex') closeReportModal();
     });
 }
 

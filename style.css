@@ -22,6 +22,52 @@
    html{font-size:16px;scroll-behavior:smooth}
    body{font-family:var(--font);background:var(--bg);color:var(--white);min-height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
    body.no-animations *{animation-duration:0s!important;transition-duration:0s!important}
+
+   /* ============================================
+      ACESSIBILIDADE — v2.0
+      ============================================ */
+   /* Reduzir movimento: mantém transições curtas de UI (foco/clique) mas remove
+      loops decorativos (glitch, brilho, partículas, glow orbs) */
+   body.reduce-motion .logo-glitch,
+   body.reduce-motion .glow-orb,
+   body.reduce-motion .floating-element,
+   body.reduce-motion .scanline,
+   body.reduce-motion .particle,
+   body.reduce-motion .pulse-ring,
+   body.reduce-motion .story-avatar-ring{animation:none!important}
+   body.reduce-motion *{scroll-behavior:auto!important}
+   @media (prefers-reduced-motion: reduce){
+       .logo-glitch,.glow-orb,.floating-element,.scanline,.particle,.pulse-ring,.story-avatar-ring{animation:none!important}
+       *{scroll-behavior:auto!important}
+   }
+
+   body.high-contrast{--bg:#000000;--bg-card:#0d0d0d;--bg-card2:#151515;--gray:#E5E7EB;--gray-dark:#D1D5DB;--gray-darker:#6B7280;--white:#FFFFFF}
+   body.high-contrast .menu-btn,body.high-contrast .panel-container,body.high-contrast .choice-btn,body.high-contrast .evidence-card{border-width:2px}
+   body.high-contrast .dialogue-text,body.high-contrast p,body.high-contrast .learn-list li{color:#F3F4F6}
+
+   body.text-size-large{font-size:18px}
+   body.text-size-xlarge{font-size:20px}
+   body.text-size-large .dialogue-text,body.text-size-xlarge .dialogue-text{line-height:1.75}
+
+   .settings-divider{display:flex;align-items:center;gap:10px;margin:18px 0 8px;font-size:12px;letter-spacing:1px;color:var(--purple);text-transform:uppercase}
+   .settings-divider::after{content:'';flex:1;height:1px;background:var(--gray-darker)}
+
+   /* ============================================
+      INTRODUÇÃO CINEMATOGRÁFICA — v2.0
+      ============================================ */
+   .intro-cinematic-screen{background:#000;flex-direction:column}
+   .intro-cinematic-content{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;min-height:120px}
+   .intro-line{font-family:var(--font-display);font-size:clamp(18px,5vw,28px);color:var(--white);letter-spacing:1px;opacity:0;min-height:1.4em}
+   .intro-line.show{animation:introLineIn 1.4s ease forwards}
+   @keyframes introLineIn{0%{opacity:0;transform:translateY(8px)}15%{opacity:1;transform:translateY(0)}80%{opacity:1}100%{opacity:0}}
+   .intro-title-wrap{opacity:0;animation:fadeInUp .9s ease forwards}
+   .intro-title{font-family:var(--font-display);font-size:clamp(28px,7vw,48px);font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,var(--purple),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 18px var(--purple-glow))}
+   .intro-subtitle{color:var(--gray);font-size:clamp(13px,3vw,16px);font-style:italic;margin-top:12px}
+   .intro-skip-btn{position:absolute;bottom:28px;right:28px;background:transparent;border:1px solid var(--gray-darker);color:var(--gray);font-family:var(--font);font-size:12px;letter-spacing:1px;padding:8px 16px;border-radius:var(--r-sm);cursor:pointer;transition:all var(--fast)}
+   .intro-skip-btn:hover{border-color:var(--purple);color:var(--white)}
+   body.reduce-motion .intro-line{animation:none!important;opacity:1!important}
+   body.reduce-motion .intro-title-wrap{animation:none!important;opacity:1!important}
+
    h1,h2,h3,.logo-glitch,.loading-title,.hub-title,.transition-title,.result-title,.profile-title,.chapter-title-header,.menu-btn,.back-btn{font-family:var(--font-display)}
    
    .screen{position:fixed;top:0;left:0;width:100%;height:100%;display:none;z-index:1}
@@ -231,6 +277,16 @@
 .phone-app-header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(17,24,39,.9);border-bottom:1px solid var(--gray-darker);position:sticky;top:0;z-index:5}
 .phone-app-name{font-size:16px;font-weight:700;flex:1}
 .phone-message{padding:9px 16px;display:flex;gap:10px;animation:fadeInUp .3s ease}
+.phone-message.phone-msg-pending{display:none}
+.phone-typing-indicator{padding:9px 16px;display:flex;gap:10px;align-items:center;animation:fadeInUp .25s ease}
+.typing-dots{display:flex;gap:4px;align-items:center;background:var(--bg-card2);border:1px solid var(--gray-darker);border-radius:14px;padding:10px 14px}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--gray);animation:typing-bounce 1.2s ease-in-out infinite}
+.typing-dots span:nth-child(2){animation-delay:.15s}
+.typing-dots span:nth-child(3){animation-delay:.3s}
+@keyframes typing-bounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+body.reduce-motion .typing-dots span{animation:none;opacity:.8}
+body.no-animations .phone-typing-indicator{display:none}
+body.no-animations .phone-message.phone-msg-pending{display:flex}
 .phone-msg-avatar{width:36px;height:36px;min-width:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:var(--bg-card);border:1px solid var(--gray-darker)}
 .phone-msg-body{flex:1}
 .phone-msg-name{font-size:13px;font-weight:700;color:var(--purple);margin-bottom:2px}
@@ -456,6 +512,8 @@
 .stat-toast.negative{border-color:var(--red);color:var(--red)}
 
 .evidence-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg-card);border:1px solid var(--cyan);border-radius:var(--r);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:190;box-shadow:0 0 25px rgba(6,182,212,.2);animation:fadeInUp .4s ease,fadeOut .4s ease 2.5s forwards;max-width:320px}
+.connection-toast{border-color:var(--purple);box-shadow:0 0 25px var(--purple-glow);bottom:80px}
+.connection-toast .evidence-toast-label{color:var(--purple)}
 .evidence-toast-icon{font-size:22px}
 .evidence-toast-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--cyan);font-weight:700}
 .evidence-toast-name{font-size:13px;font-weight:600;display:block;margin-top:2px}
